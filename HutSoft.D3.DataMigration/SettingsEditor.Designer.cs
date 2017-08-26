@@ -1,4 +1,4 @@
-﻿namespace hutsoft.d3.data_migration
+﻿namespace HutSoft.D3.DataMigration
 {
     partial class SettingsEditor
     {

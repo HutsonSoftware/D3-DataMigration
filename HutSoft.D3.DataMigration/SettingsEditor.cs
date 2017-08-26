@@ -8,6 +8,9 @@ namespace HutSoft.D3.DataMigration
 {
     internal partial class SettingsEditor : Form
     {
+        private AgileUtility _agileUtility;
+        private VaultUtility _vaultUtility;
+
         public Settings Settings { get; set; }
 
         public bool IsDirty { get; set; }
@@ -15,6 +18,8 @@ namespace HutSoft.D3.DataMigration
         public SettingsEditor(Settings settings)
         {
             Settings = settings;
+            _agileUtility = new AgileUtility(Settings);
+            _vaultUtility = new VaultUtility(Settings);
             InitializeComponent();
         }
 
@@ -42,7 +47,7 @@ namespace HutSoft.D3.DataMigration
             
             try
             {
-                AgileUtility.TestSQLiteConnection(AgileSQLiteConnectionString.Text);
+                _agileUtility.TestSQLiteConnection(AgileSQLiteConnectionString.Text);
                 errorProvider1.SetError(TestAgileSQLiteConnection, "");
                 AgileSQLiteConnectionString.BackColor = SystemColors.Window;
             }
@@ -63,7 +68,7 @@ namespace HutSoft.D3.DataMigration
             TestAgileOracleConnection.Parent.Focus();
             try
             {
-                AgileUtility.TestOracleConnection(AgileOracleConnectionString.Text);
+                _agileUtility.TestOracleConnection(AgileOracleConnectionString.Text);
                 errorProvider1.SetError(TestAgileOracleConnection, "");
                 AgileOracleConnectionString.BackColor = SystemColors.Window;
             }
@@ -84,7 +89,7 @@ namespace HutSoft.D3.DataMigration
             TestVaultConnection.Parent.Focus();
             try
             {
-                WebServiceManager svcMgr = VaultUtility.LoginToVault(VaultServer.Text, VaultInstance.Text, VaultUserName.Text, VaultPassword.Text);
+                WebServiceManager svcMgr = _vaultUtility.LoginToVault(VaultServer.Text, VaultInstance.Text, VaultUserName.Text, VaultPassword.Text);
                 errorProvider1.SetError(TestVaultConnection, "");
                 VaultServer.BackColor = SystemColors.Window;
                 VaultInstance.BackColor = SystemColors.Window;

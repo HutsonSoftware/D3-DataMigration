@@ -1,4 +1,4 @@
-﻿namespace hutsoft.d3.data_migration
+﻿namespace HutSoft.D3.DataMigration
 {
     partial class Migration
     {
@@ -109,7 +109,7 @@
             // 
             // gbxAgile
             // 
-            this.gbxAgile.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.gbxAgile.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.gbxAgile.Controls.Add(this.label2);
             this.gbxAgile.Controls.Add(this.dgvAgileStatuses);
@@ -149,7 +149,7 @@
             // 
             this.dgvAgileTop100Sample.AllowUserToAddRows = false;
             this.dgvAgileTop100Sample.AllowUserToDeleteRows = false;
-            this.dgvAgileTop100Sample.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.dgvAgileTop100Sample.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.dgvAgileTop100Sample.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dgvAgileTop100Sample.EditMode = System.Windows.Forms.DataGridViewEditMode.EditProgrammatically;
@@ -203,8 +203,8 @@
             // 
             // gbxResults
             // 
-            this.gbxResults.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.gbxResults.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.gbxResults.Controls.Add(this.tableLayoutPanel);
             this.gbxResults.Location = new System.Drawing.Point(12, 282);
@@ -266,7 +266,7 @@
             // 
             // LogText
             // 
-            this.LogText.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            this.LogText.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.LogText.Location = new System.Drawing.Point(583, 282);
             this.LogText.Multiline = true;
