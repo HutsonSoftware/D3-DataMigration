@@ -1,0 +1,14 @@
+﻿<Settings>
+  <AgileSQLiteConnectionString>Data Source=C:\Users\Suzanne\Documents\AED_ITEM_FILES.db;Version=3;FailIfMissing=True</AgileSQLiteConnectionString>
+  <AgileOracleConnectionString>Data Source=MyOracleDB;User Id=myUsername;Password=myPassword;Integrated Security=no;</AgileOracleConnectionString>
+  <VaultServer>52.35.252.129</VaultServer>
+  <VaultInstance>Migration_Test</VaultInstance>
+  <VaultUserName>migration</VaultUserName>
+  <VaultPassword>migration</VaultPassword>
+  <LifeCycleDefName>Flexible Release Process</LifeCycleDefName>
+  <WipStateName>Work In Progress</WipStateName>
+  <WipStateID>-1</WipStateID>
+  <ReleasedStateName>Released</ReleasedStateName>
+  <ReleasedStateID>-1</ReleasedStateID>
+  <DesignsRootPath>$\Vault\Designs\</DesignsRootPath>
+</Settings>
