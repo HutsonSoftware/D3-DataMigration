@@ -6,6 +6,8 @@ namespace HutSoft.D3.DataMigration
     internal class VaultUtility
     {
         private Settings _settings;
+        private bool _isLoggedIn = false;
+        private WebServiceManager _webServiceManager;
 
         internal VaultUtility(Settings settings)
         {
@@ -18,16 +20,31 @@ namespace HutSoft.D3.DataMigration
             set { _settings = value; }
         }
 
-        internal WebServiceManager LoginToVault()
+        internal bool IsLoggedIn { get { return _isLoggedIn; } }
+
+        internal WebServiceManager WebServiceManager { get { return _webServiceManager; } }
+
+        internal void LoginToVault()
         {
-            return LoginToVault(_settings.VaultServer, _settings.VaultInstance, _settings.VaultUserName, _settings.VaultPassword);
+            try
+            {
+                if (_webServiceManager != null)
+                {
+                    _webServiceManager = LoginToVault(_settings.VaultServer, _settings.VaultInstance, _settings.VaultUserName, _settings.VaultPassword);
+                    _isLoggedIn = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw (ex);
+            }
         }
 
         internal WebServiceManager LoginToVault(string vaultServer, string vaultInstance, string vaultUserName, string vaultPassword)
         {
             WebServiceManager webServiceManager;
             try
-            {
+            { 
                 webServiceManager = new WebServiceManager(new UserPasswordCredentials(vaultServer, vaultInstance, vaultUserName, vaultPassword, false));
                 if (webServiceManager != null)
                     webServiceManager.ReSignIn = true;

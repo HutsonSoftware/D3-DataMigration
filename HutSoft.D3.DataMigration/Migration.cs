@@ -15,7 +15,6 @@ namespace HutSoft.D3.DataMigration
     {
         BindingSource _bsAgileTop100Sample = new BindingSource();
         BindingSource _bsAgileStatuses = new BindingSource();
-        WebServiceManager _svcMgr = null;
         MyBackgroundWorker[] _backgroundWorkers = null;
         Settings _settings;
         LogUtility _logUtility;
@@ -324,9 +323,7 @@ namespace HutSoft.D3.DataMigration
         {
             try
             {
-                //Step0 
-                //Log into Vault
-                _svcMgr = _vaultUtility.LoginToVault();
+                _vaultUtility.LoginToVault();
 
 
                 //Step1
@@ -343,12 +340,12 @@ namespace HutSoft.D3.DataMigration
                 FileInfo fi = new FileInfo(localFilePath);
                 if (!fi.Exists)
                 {
-                    _logUtility.Log("File does not exist:S " + localFilePath);
+                    _logUtility.Log("File does not exist: " + localFilePath);
                     return;
                 }
-             
+
                 //Search for file by name
-                PropDef[] filePropDefs = _svcMgr.PropertyService.GetPropertyDefinitionsByEntityClassId("FILE");
+                PropDef[] filePropDefs = _vaultUtility.WebServiceManager.PropertyService.GetPropertyDefinitionsByEntityClassId("FILE");
                 PropDef fileNamePropDef = filePropDefs.Single(n => n.SysName == "FileName");
 
                 SrchCond fileNameCond = new SrchCond()
@@ -366,7 +363,7 @@ namespace HutSoft.D3.DataMigration
 
                 while (status == null || foundFiles.Count < status.TotalHits)
                 {
-                    Autodesk.Connectivity.WebServices.File[] results = _svcMgr.DocumentService.FindFilesBySearchConditions(new SrchCond[] { fileNameCond }, null, null, false, true, ref bookmark, out status);
+                    Autodesk.Connectivity.WebServices.File[] results = _vaultUtility.WebServiceManager.DocumentService.FindFilesBySearchConditions(new SrchCond[] { fileNameCond }, null, null, false, true, ref bookmark, out status);
 
                     if (results != null)
                         foundFiles.AddRange(results);
@@ -399,7 +396,7 @@ namespace HutSoft.D3.DataMigration
 
                     //First we need to get a list of the Lifecycle States on this file
                     //We are using the same lifecycle definition for all files so this should be fairly straight forward
-                    LfCycDef[] lcDefs = _svcMgr.DocumentServiceExtensions.GetAllLifeCycleDefinitions();
+                    LfCycDef[] lcDefs = _vaultUtility.WebServiceManager.DocumentServiceExtensions.GetAllLifeCycleDefinitions();
                     LfCycDef stdLcDef = (from l in lcDefs
                                          where l.DispName == _settings.LifeCycleDefName
                                          select l).FirstOrDefault();
@@ -413,10 +410,10 @@ namespace HutSoft.D3.DataMigration
                     //Check the state of the existing file
 
                     //Find the LfCycState that matches the To State Name and get it's ID
-                    IdPair[] wipFileLCStates = _svcMgr.DocumentServiceExtensions.GetLifeCycleStateIdsByFileMasterIds(new long[] { masterID });
+                    IdPair[] wipFileLCStates = _vaultUtility.WebServiceManager.DocumentServiceExtensions.GetLifeCycleStateIdsByFileMasterIds(new long[] { masterID });
                     foreach (var state in wipFileLCStates)
                     {
-                        LfCycState lfState = _svcMgr.LifeCycleService.GetLifeCycleStatesByIds(new long[] { state.ValId }).First();
+                        LfCycState lfState = _vaultUtility.WebServiceManager.LifeCycleService.GetLifeCycleStatesByIds(new long[] { state.ValId }).First();
                         if (lfState.DispName == _settings.WipStateName)
                         {
                             _settings.WipStateID = lfState.Id;
@@ -425,15 +422,15 @@ namespace HutSoft.D3.DataMigration
                     }
 
                     //Update the Files Lifecycle State
-                    _svcMgr.DocumentServiceExtensions.UpdateFileLifeCycleStates(new long[] { masterID }, new long[] { _settings.WipStateID }, "Data Migration");
+                    _vaultUtility.WebServiceManager.DocumentServiceExtensions.UpdateFileLifeCycleStates(new long[] { masterID }, new long[] { _settings.WipStateID }, "Data Migration");
 
                     //Get the latest version now that we have changed the state, as the state change may have created a new version
                     Autodesk.Connectivity.WebServices.File latestFileVersion =
-                        _svcMgr.DocumentService.FindLatestFilesByMasterIds(new long[] { masterID }).First();
+                        _vaultUtility.WebServiceManager.DocumentService.FindLatestFilesByMasterIds(new long[] { masterID }).First();
 
                     ByteArray ticket = null;
                     //Check out the file, but don't worry about downloading it, we're going to just upload a new version on top of this version
-                    _svcMgr.DocumentService.CheckoutFile(
+                    _vaultUtility.WebServiceManager.DocumentService.CheckoutFile(
                         latestFileVersion.Id,
                         CheckoutFileOptions.Master,
                         null,
@@ -448,10 +445,10 @@ namespace HutSoft.D3.DataMigration
                 long fldrID = -1;
                 //TODO: Set this via an input or config
                 //Find the Folder we are checking into, if it doesn't exist then we'll create it
-                Folder vFolder = _svcMgr.DocumentService.GetFolderByPath(vaultFolder);
+                Folder vFolder = _vaultUtility.WebServiceManager.DocumentService.GetFolderByPath(vaultFolder);
                 if (vFolder == null)
                 {
-                    Folder currentFolder = _svcMgr.DocumentService.GetFolderRoot();
+                    Folder currentFolder = _vaultUtility.WebServiceManager.DocumentService.GetFolderRoot();
                     string currentPath = "";
                     string[] folders = vaultFolder.Split('/');
 
@@ -459,11 +456,11 @@ namespace HutSoft.D3.DataMigration
                     foreach (var fldr in folders)
                     {
                         currentPath = currentFolder.FullName + "/" + fldr;
-                        Folder nextFolder = _svcMgr.DocumentService.GetFolderByPath(currentPath);
+                        Folder nextFolder = _vaultUtility.WebServiceManager.DocumentService.GetFolderByPath(currentPath);
                         //If the folder doesn't exist then create it
                         if (nextFolder == null)
                         {
-                            nextFolder = _svcMgr.DocumentService.AddFolder(fldr, currentFolder.Id, false);
+                            nextFolder = _vaultUtility.WebServiceManager.DocumentService.AddFolder(fldr, currentFolder.Id, false);
                         }
 
                         currentFolder = nextFolder;
@@ -489,7 +486,7 @@ namespace HutSoft.D3.DataMigration
                 if (existingFile != null)
                 {
                     //Step 3A: Check In the File
-                    newFileRev = _svcMgr.DocumentService.CheckinUploadedFile(
+                    newFileRev = _vaultUtility.WebServiceManager.DocumentService.CheckinUploadedFile(
                         masterID,
                         "Data Migration - Added new file revision",
                         false,
@@ -505,7 +502,7 @@ namespace HutSoft.D3.DataMigration
                 else
                 {
                     //Step 3B: Upload In the File
-                    newFileRev = _svcMgr.DocumentService.AddUploadedFile(
+                    newFileRev = _vaultUtility.WebServiceManager.DocumentService.AddUploadedFile(
                         fldrID,
                         fi.Name,
                         "Data Migration - Initial File Checkin",
@@ -549,7 +546,7 @@ namespace HutSoft.D3.DataMigration
                         //Keep going but make note of the missing Vault Property on the Database record
                     }
                 }
-                _svcMgr.DocumentService.UpdateFileProperties(new long[] { masterID }, updateProps.ToArray());
+                _vaultUtility.WebServiceManager.DocumentService.UpdateFileProperties(new long[] { masterID }, updateProps.ToArray());
 
 
                 //Step5
@@ -569,7 +566,7 @@ namespace HutSoft.D3.DataMigration
                 //Set the Read/Write ACL Groups
                 foreach (var aclGroup in writeACLGroups)
                 {
-                    Group group = _svcMgr.AdminService.GetGroupByName(aclGroup);
+                    Group group = _vaultUtility.WebServiceManager.AdminService.GetGroupByName(aclGroup);
                     if (group != null)
                     {
                         ACE ace = new ACE();
@@ -577,9 +574,9 @@ namespace HutSoft.D3.DataMigration
                         ace.PermisArray = new AccessPermis[] { readAccessPermission, writeAccessPermission };
                         ACE[] aces = new ACE[1];
 
-                        ACL myAcl = _svcMgr.SecurityService.AddSystemACL(aces);
+                        ACL myAcl = _vaultUtility.WebServiceManager.SecurityService.AddSystemACL(aces);
 
-                        _svcMgr.SecurityService.SetSystemACLs(new long[] { masterID }, myAcl.Id);
+                        _vaultUtility.WebServiceManager.SecurityService.SetSystemACLs(new long[] { masterID }, myAcl.Id);
 
                     }
                     else
@@ -591,7 +588,7 @@ namespace HutSoft.D3.DataMigration
                 //Set the Read Only ACL Groups
                 foreach (var aclGroup in readACLGroups)
                 {
-                    Group group = _svcMgr.AdminService.GetGroupByName(aclGroup);
+                    Group group = _vaultUtility.WebServiceManager.AdminService.GetGroupByName(aclGroup);
                     if (group != null)
                     {
                         ACE ace = new ACE();
@@ -602,9 +599,9 @@ namespace HutSoft.D3.DataMigration
                         ACE[] aces = new ACE[1];
                         aces[0] = ace;
 
-                        ACL myACL = _svcMgr.SecurityService.AddSystemACL(aces);
+                        ACL myACL = _vaultUtility.WebServiceManager.SecurityService.AddSystemACL(aces);
 
-                        _svcMgr.SecurityService.SetSystemACLs(new long[] { masterID }, myACL.Id);
+                        _vaultUtility.WebServiceManager.SecurityService.SetSystemACLs(new long[] { masterID }, myACL.Id);
                     }
                     else
                     {
@@ -616,10 +613,10 @@ namespace HutSoft.D3.DataMigration
                 //Step6
                 //Set the state of the file to Released
                 //Find the LfCycState that matches the To State Name and get its ID
-                IdPair[] releasedRildLCStates = _svcMgr.DocumentServiceExtensions.GetLifeCycleStateIdsByFileMasterIds(new long[] { masterID });
+                IdPair[] releasedRildLCStates = _vaultUtility.WebServiceManager.DocumentServiceExtensions.GetLifeCycleStateIdsByFileMasterIds(new long[] { masterID });
                 foreach (var state in releasedRildLCStates)
                 {
-                    LfCycState lfState = _svcMgr.LifeCycleService.GetLifeCycleStatesByIds(new long[] { state.ValId }).First();
+                    LfCycState lfState = _vaultUtility.WebServiceManager.LifeCycleService.GetLifeCycleStatesByIds(new long[] { state.ValId }).First();
                     if (lfState.DispName == _settings.ReleasedStateName)
                     {
                         _settings.ReleasedStateID = lfState.Id;
@@ -628,10 +625,10 @@ namespace HutSoft.D3.DataMigration
                 }
 
                 //Update the Files Lifecycl State
-                _svcMgr.DocumentServiceExtensions.UpdateFileLifeCycleStates(new long[] { masterID }, new long[] { _settings.ReleasedStateID }, "Data Migration - Released new File Revision");
+                _vaultUtility.WebServiceManager.DocumentServiceExtensions.UpdateFileLifeCycleStates(new long[] { masterID }, new long[] { _settings.ReleasedStateID }, "Data Migration - Released new File Revision");
 
                 //Get the latest version now that we have changed the state, as the state change may have created a new version
-                Autodesk.Connectivity.WebServices.File updatedFileVersion = _svcMgr.DocumentService.FindLatestFilesByMasterIds(new long[] { masterID }).First();
+                Autodesk.Connectivity.WebServices.File updatedFileVersion = _vaultUtility.WebServiceManager.DocumentService.FindLatestFilesByMasterIds(new long[] { masterID }).First();
 
 
                 //Step7
@@ -646,7 +643,7 @@ namespace HutSoft.D3.DataMigration
                 _logUtility.Log(ex.Message);
             }
         }
-
+        
         private void configToolStripMenuItem_Click(object sender, EventArgs e)
         {
             ViewConfig();
