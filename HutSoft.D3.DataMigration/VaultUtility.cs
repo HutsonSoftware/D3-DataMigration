@@ -27,15 +27,14 @@ namespace HutSoft.D3.DataMigration
         internal bool IsLoggedIn { get { return _isLoggedIn; } }
 
         internal WebServiceManager WebServiceManager { get { return _webServiceManager; } }
-
+        
         internal WebServiceManager LoginToVault(string vaultServer, string vaultInstance, string vaultUserName, string vaultPassword)
         {
             WebServiceManager webServiceManager;
             try
             {
                 webServiceManager = new WebServiceManager(new UserPasswordCredentials(vaultServer, vaultInstance, vaultUserName, vaultPassword, false));
-                if (webServiceManager != null)
-                    webServiceManager.ReSignIn = true;
+                webServiceManager.ReSignIn = true;
             }
             catch (Exception ex)
             {
@@ -49,7 +48,7 @@ namespace HutSoft.D3.DataMigration
             //Step0
             try
             {
-                if (_webServiceManager != null)
+                if (_webServiceManager == null)
                 {
                     _webServiceManager = LoginToVault(_settings.VaultServer, _settings.VaultInstance, _settings.VaultUserName, _settings.VaultPassword);
                     _isLoggedIn = true;
@@ -59,6 +58,47 @@ namespace HutSoft.D3.DataMigration
             {
                 throw (ex);
             }
+        }
+
+        internal bool FlightCheck()
+        {
+            bool result = false;
+            try
+            {
+                result = LifeCycleDefNameExists();
+                //TODO: verify that WipStateName & ReleasedStateName exist also ... how??
+            }
+            catch (Exception ex)
+            {
+                throw (ex);
+            }
+
+            return result;
+        }
+
+        internal bool LifeCycleDefNameExists()
+        {
+            bool result = false;
+
+            try
+            {
+                //Does LifeCycleDefName in settings exist in Vault?
+                LfCycDef[] lcDefs = _webServiceManager.DocumentServiceExtensions.GetAllLifeCycleDefinitions();
+                LfCycDef stdLcDef = (from l in lcDefs
+                                     where l.DispName == _settings.LifeCycleDefName
+                                     select l).FirstOrDefault();
+                if (stdLcDef != null)
+                {
+                    //Lifecycle Definitions was found
+                    result = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw (ex);
+            }
+
+            return result;
         }
 
         internal Autodesk.Connectivity.WebServices.File GetExistingFile(string localFilePath)
@@ -131,16 +171,15 @@ namespace HutSoft.D3.DataMigration
                     //Set the MasterID so we can reference it later
                     existingFile = foundFiles.First();
 
-                    //First we need to get a list of the Lifecycle States on this file
-                    //We are using the same lifecycle definition for all files so this should be fairly straight forward
-                    LfCycDef[] lcDefs = _webServiceManager.DocumentServiceExtensions.GetAllLifeCycleDefinitions();
-                    LfCycDef stdLcDef = (from l in lcDefs
-                                         where l.DispName == _settings.LifeCycleDefName
-                                         select l).FirstOrDefault();
-                    if (stdLcDef == null)
-                    {
-                        //Lifecycle Definitions was not found, so handle this error
-                    }
+                    //moved to LifeCycleDefNameExists() and verified before migration in FlightCheck()
+                    /// //First we need to get a list of the Lifecycle States on this file
+                    /// //We are using the same lifecycle definition for all files so this should be fairly straight forward
+                    /// LfCycDef[] lcDefs = _webServiceManager.DocumentServiceExtensions.GetAllLifeCycleDefinitions();
+                    /// LfCycDef stdLcDef = (from l in lcDefs where l.DispName == _settings.LifeCycleDefName select l).FirstOrDefault();
+                    /// if (stdLcDef == null)
+                    /// {
+                    /// //Lifecycle Definitions was not found, so handle this error
+                    /// }
 
                     //Step 1B: Set the state of the file to WIP so we can Check In a new Revision
 
@@ -151,9 +190,9 @@ namespace HutSoft.D3.DataMigration
                     foreach (var state in wipFileLCStates)
                     {
                         LfCycState lfState = _webServiceManager.LifeCycleService.GetLifeCycleStatesByIds(new long[] { state.ValId }).First();
-                        if (lfState.DispName == _settings.WipStateName)
+                        if (lfState.DispName == _settings.WipStateName) //TODO: What if there is no matching lfState.DispName for the WipStateName in Settings.xml?
                         {
-                            _settings.WipStateID = lfState.Id;
+                            _settings.WipStateID = lfState.Id; //TODO: Does this need to be saved back to physical Settings.xml file?
                             break;
                         }
                     }
@@ -329,9 +368,10 @@ namespace HutSoft.D3.DataMigration
                 writeAccessPermission.Id = 2;
                 writeAccessPermission.Val = true;
 
-                //AccessPermis deleteAccessPermission = new AccessPermis();
-                //deleteAccessPermission.Id = 3;
-                //deleteAccessPermission.Val = true;
+                //The deleteAccessPermission is never used, so commented out
+                ///AccessPermis deleteAccessPermission = new AccessPermis();
+                ///deleteAccessPermission.Id = 3;
+                ///deleteAccessPermission.Val = true;
 
                 //Set the Read/Write ACL Groups
                 foreach (var aclGroup in writeACLGroups)
@@ -399,7 +439,7 @@ namespace HutSoft.D3.DataMigration
                     LfCycState lfState = _webServiceManager.LifeCycleService.GetLifeCycleStatesByIds(new long[] { state.ValId }).First();
                     if (lfState.DispName == _settings.ReleasedStateName)
                     {
-                        _settings.ReleasedStateID = lfState.Id;
+                        _settings.ReleasedStateID = lfState.Id; //TODO: Does this need to be saved back to physical Settings.xml file?
                         break;
                     }
                 }

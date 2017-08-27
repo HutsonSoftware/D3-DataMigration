@@ -95,7 +95,7 @@
             this.Migrate.TabIndex = 2;
             this.Migrate.Text = "Migrate";
             this.Migrate.UseVisualStyleBackColor = true;
-            this.Migrate.Click += new System.EventHandler(this.btnMigrate_Click);
+            this.Migrate.Click += new System.EventHandler(this.Migrate_Click);
             // 
             // Cancel
             // 
@@ -105,7 +105,7 @@
             this.Cancel.TabIndex = 3;
             this.Cancel.Text = "Cancel";
             this.Cancel.UseVisualStyleBackColor = true;
-            this.Cancel.Click += new System.EventHandler(this.btnCancel_Click);
+            this.Cancel.Click += new System.EventHandler(this.Cancel_Click);
             // 
             // gbxAgile
             // 
@@ -168,7 +168,7 @@
             this.RefreshAgile.TabIndex = 3;
             this.RefreshAgile.Text = "Refresh";
             this.RefreshAgile.UseVisualStyleBackColor = true;
-            this.RefreshAgile.Click += new System.EventHandler(this.btnRefreshAgile_Click);
+            this.RefreshAgile.Click += new System.EventHandler(this.RefreshAgile_Click);
             // 
             // rbnOracle
             // 

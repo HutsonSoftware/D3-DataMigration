@@ -57,7 +57,7 @@ namespace HutSoft.D3.DataMigration
             _agileUtility.DatabaseType = databaseType;
         }
 
-        private void btnRefreshAgile_Click(object sender, EventArgs e)
+        private void RefreshAgile_Click(object sender, EventArgs e)
         {
             RefreshAgile.Text = "Loading...";
             RefreshAgile.Enabled = false;
@@ -84,15 +84,40 @@ namespace HutSoft.D3.DataMigration
             dgvAgileStatuses.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
         }
 
-        private void btnMigrate_Click(object sender, EventArgs e)
+        private void Migrate_Click(object sender, EventArgs e)
         {
-            //TODO: visual cue of button pushed while migrating.  Tricky to know when threads are done though
-            GetThreadCount();
-            InitializeBackgroundWorkers();
-            SetupTableLayoutPanel();
-            PopulateDistinctFileIds();
-            AssignFileIdsToBackgroundWorkers();
-            RunBackgroundWorkers();
+            try
+            {
+                if (FlightCheck())
+                {
+                    //TODO: visual cue of button pushed while migrating.  Tricky to know when threads are done though
+                    GetThreadCount();
+                    InitializeBackgroundWorkers();
+                    SetupTableLayoutPanel();
+                    PopulateDistinctFileIds();
+                    AssignFileIdsToBackgroundWorkers();
+                    RunBackgroundWorkers();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logUtility.Log("Exception in Migrate_Click: " + ex.Message);
+            }
+        }
+
+        private bool FlightCheck()
+        {
+            bool passesFlightCheck = false;
+            try
+            {
+                _vaultUtility.LoginToVault();
+                passesFlightCheck = _vaultUtility.FlightCheck();
+            }
+            catch (Exception ex)
+            {
+                throw (ex);
+            }
+            return passesFlightCheck;
         }
 
         private void GetThreadCount()
@@ -193,7 +218,7 @@ namespace HutSoft.D3.DataMigration
             }
         }
 
-        private void btnCancel_Click(object sender, EventArgs e)
+        private void Cancel_Click(object sender, EventArgs e)
         {
             CancelBackgroundWorkers();
         }
@@ -320,9 +345,6 @@ namespace HutSoft.D3.DataMigration
         {
             try
             {
-                //Step0
-                _vaultUtility.LoginToVault();
-
                 //Step1
                 //If the file being migrated has a previous version,
                 //we need to look up that file so we can change its state to WIP, then check it out
