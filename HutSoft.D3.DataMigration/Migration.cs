@@ -221,7 +221,6 @@ namespace HutSoft.D3.DataMigration
                 DataTable dt = _agileUtility.GetFileByFileId(bw.FileIds[i]);
                 foreach (DataRow dr in dt.Rows)
                 {
-                    dr["FILE_PATH"] = dr["FILE_PATH"].ToString().Replace("//", "\\");
                     MigrateFile(dr);
                     if (bw.CancellationPending)
                     {
@@ -289,11 +288,18 @@ namespace HutSoft.D3.DataMigration
 
         private void MigrateFile(DataRow dr)
         {
-            string localFilePath = string.Empty;
-            string vaultFolder = string.Empty;
+            string localFilePath = dr["FILE_PATH"].ToString().Replace("//", "\\");
+
+            string vaultFolder = Path.Combine(_settings.DesignsRootPath, dr["CLASS"].ToString(), dr["SUBCLASS"].ToString());
+
             Dictionary<string, string> fileProps = new Dictionary<string, string>();
-            string[] readACLGroups;
-            string[] writeACLGroups;
+            //TODO: get fileProps from Settings.xml
+
+            string[] readACLGroups = dr["FACILITIES_EXTERNAL"].ToString().Split(';');
+            string[] writeACLGroups = dr["FACILITIES_INTERNAL"].ToString().Split(';');
+            
+            //TODO: Not Ready For This Yet
+            //UpdateFile(localFilePath, vaultFolder, fileProps, readACLGroups, writeACLGroups);
         }
 
         /// <summary>
@@ -321,8 +327,8 @@ namespace HutSoft.D3.DataMigration
                 //Step0 
                 //Log into Vault
                 _svcMgr = _vaultUtility.LoginToVault();
-                
-                
+
+
                 //Step1
                 //If the file being migrated has a previous version,
                 //we need to look up that file so we can change its state to WIP, then check it out
@@ -337,9 +343,10 @@ namespace HutSoft.D3.DataMigration
                 FileInfo fi = new FileInfo(localFilePath);
                 if (!fi.Exists)
                 {
-                    MessageBox.Show("File does not exist", "File Existance", MessageBoxButtons.OK);
+                    _logUtility.Log("File does not exist:S " + localFilePath);
+                    return;
                 }
-
+             
                 //Search for file by name
                 PropDef[] filePropDefs = _svcMgr.PropertyService.GetPropertyDefinitionsByEntityClassId("FILE");
                 PropDef fileNamePropDef = filePropDefs.Single(n => n.SysName == "FileName");
