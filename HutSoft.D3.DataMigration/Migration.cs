@@ -1,12 +1,9 @@
-﻿using Autodesk.Connectivity.WebServices;
-using Autodesk.Connectivity.WebServicesTools;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Windows.Forms;
 
 namespace HutSoft.D3.DataMigration
@@ -323,193 +320,38 @@ namespace HutSoft.D3.DataMigration
         {
             try
             {
-                //Step0: Login to Vault
+                //Step0
                 _vaultUtility.LoginToVault();
-
 
                 //Step1
                 //If the file being migrated has a previous version,
                 //we need to look up that file so we can change its state to WIP, then check it out
                 //If not previous version, skip to Step4
-
                 //if we have captured the File MasterID from a previous version we can use that to find
                 //the latest version when checking in a newer version
-
-                long masterID = -1; //TODO: From previous file
-                Autodesk.Connectivity.WebServices.File existingFile = null;
-
-                FileInfo fi = new FileInfo(localFilePath);
-                if (!fi.Exists)
-                {
-                    _logUtility.Log("File does not exist: " + localFilePath);
-                    return;
-                }
-
-                //Search for file by name
-                PropDef[] filePropDefs = _vaultUtility.WebServiceManager.PropertyService.GetPropertyDefinitionsByEntityClassId("FILE");
-                PropDef fileNamePropDef = filePropDefs.Single(n => n.SysName == "FileName");
-
-                SrchCond fileNameCond = new SrchCond()
-                {
-                    PropDefId = fileNamePropDef.Id,
-                    PropTyp = PropertySearchType.SingleProperty,
-                    SrchOper = 3,
-                    SrchRule = SearchRuleType.Must,
-                    SrchTxt = fi.Name
-                };
-
-                string bookmark = string.Empty;
-                SrchStatus status = null;
-                List<Autodesk.Connectivity.WebServices.File> foundFiles = new List<Autodesk.Connectivity.WebServices.File>();
-
-                while (status == null || foundFiles.Count < status.TotalHits)
-                {
-                    Autodesk.Connectivity.WebServices.File[] results = 
-                        _vaultUtility.WebServiceManager.DocumentService.FindFilesBySearchConditions(
-                            new SrchCond[] { fileNameCond }, null, null, false, true, ref bookmark, out status);
-
-                    if (results != null)
-                        foundFiles.AddRange(results);
-                    else
-                        break;
-                }
-
-                //Duplicate Files found in Vault
-                //This shouldn't happen but we can check just in case
-                if (foundFiles.Count > 1)
-                {
-                    //TODO: Record the duplicate file error in the database
-                    string fileIDs = "";
-                    int i = 0;
-                    foreach (var ff in foundFiles)
-                    {
-                        fileIDs = i == 0 ? ff.Id.ToString() : string.Format("{0}, {1}", fileIDs, ff.Id);
-                        i++;
-                    }
-                }
-                //We found just one file with the same FileName so we'll check our new file in over this one
-                else
-                {
-                    //Step 1A: Set previous File Version to WIP and Check Out
-                    //Now that we have the latest version of the file we can change its state and check it out
-
-                    //Set the MasterID so we can reference it later
-                    existingFile = foundFiles.First();
-                    masterID = existingFile.MasterId;
-
-                    //First we need to get a list of the Lifecycle States on this file
-                    //We are using the same lifecycle definition for all files so this should be fairly straight forward
-                    LfCycDef[] lcDefs = _vaultUtility.WebServiceManager.DocumentServiceExtensions.GetAllLifeCycleDefinitions();
-                    LfCycDef stdLcDef = (from l in lcDefs
-                                         where l.DispName == _settings.LifeCycleDefName
-                                         select l).FirstOrDefault();
-                    if (stdLcDef == null)
-                    {
-                        //Lifecycle Definitions was not found, so handle this error
-                    }
-
-                    //Step 1B: Set the state of the file to WIP so we can Check In a new Revision
-
-                    //Check the state of the existing file
-
-                    //Find the LfCycState that matches the To State Name and get it's ID
-                    IdPair[] wipFileLCStates = _vaultUtility.WebServiceManager.DocumentServiceExtensions.GetLifeCycleStateIdsByFileMasterIds(new long[] { masterID });
-                    foreach (var state in wipFileLCStates)
-                    {
-                        LfCycState lfState = _vaultUtility.WebServiceManager.LifeCycleService.GetLifeCycleStatesByIds(new long[] { state.ValId }).First();
-                        if (lfState.DispName == _settings.WipStateName)
-                        {
-                            _settings.WipStateID = lfState.Id;
-                            break;
-                        }
-                    }
-
-                    //Update the Files Lifecycle State
-                    _vaultUtility.WebServiceManager.DocumentServiceExtensions.UpdateFileLifeCycleStates(new long[] { masterID }, new long[] { _settings.WipStateID }, "Data Migration");
-
-                    //Get the latest version now that we have changed the state, as the state change may have created a new version
-                    Autodesk.Connectivity.WebServices.File latestFileVersion =
-                        _vaultUtility.WebServiceManager.DocumentService.FindLatestFilesByMasterIds(new long[] { masterID }).First();
-
-                    ByteArray ticket = null;
-                    //Check out the file, but don't worry about downloading it, we're going to just upload a new version on top of this version
-                    _vaultUtility.WebServiceManager.DocumentService.CheckoutFile(
-                        latestFileVersion.Id,
-                        CheckoutFileOptions.Master,
-                        null,
-                        null,
-                        "Data Migration - Updating File Revision",
-                        out ticket);
-                }
-
-
-
-                //Step2
-                long fldrID = -1;
-                //TODO: Set this via an input or config
-                //Find the Folder we are checking into, if it doesn't exist then we'll create it
-                _vaultUtility.VerifyVaultFolderExists(vaultFolder);
-
-
-
-                //Step3
-                //Upload or checkin the file
-                DateTime fileLastModDate = new DateTime(); //TODO: pull this from DateTime from the database
-                FileStream fs = new FileStream(localFilePath, FileMode.Open);
-                BinaryReader br = new BinaryReader(fs);
-
-                byte[] buffer = null;
-                buffer = new byte[fs.Length];
-                fs.Read(buffer, 0, (int)fs.Length);
-                ByteArray fileBytes = new ByteArray() { Bytes = buffer };
-
-                Autodesk.Connectivity.WebServices.File newFileRev = null;
+                long masterID = -1;
+                Autodesk.Connectivity.WebServices.File existingFile = _vaultUtility.GetExistingFile(localFilePath);
                 if (existingFile != null)
                 {
-                    //Step 3A: Check In the File
-                    newFileRev = _vaultUtility.WebServiceManager.DocumentService.CheckinUploadedFile(
-                        masterID,
-                        "Data Migration - Added new file revision",
-                        false,
-                        fileLastModDate,
-                        null,
-                        null,
-                        false,
-                        fi.Name,
-                        FileClassification.DesignDocument,
-                        false,
-                        fileBytes);
-                }
-                else
-                {
-                    //Step 3B: Upload In the File
-                    newFileRev = _vaultUtility.WebServiceManager.DocumentService.AddUploadedFile(
-                        fldrID,
-                        fi.Name,
-                        "Data Migration - Initial File Checkin",
-                        fileLastModDate,
-                        null,
-                        null,
-                        FileClassification.DesignDocument,
-                        false,
-                        fileBytes);
-                }
+                    masterID = existingFile.MasterId;
 
-                if (newFileRev == null)
-                {
-                    //TODO: Checkin Failed so handle the error
-                }
+                    //Step2
+                    //Find the Folder we are checking into, if it doesn't exist then we'll create it
+                    _vaultUtility.VerifyVaultFolderExists(vaultFolder);
 
+                    //Step3
+                    //Upload or checkin the file
+                    long fldrID = -1;  //TODO: Set this via an input or config
+                    _vaultUtility.CheckInFile(localFilePath, existingFile, fldrID);
+                }
 
                 //Step4
                 //Update the Vault File Properties
-                _vaultUtility.UpdateVaultFileProperties(fileProps, filePropDefs, masterID);
-
+                _vaultUtility.UpdateVaultFileProperties(fileProps, masterID);
 
                 //Step5
                 //Set the file security Groups (Access Control List)
                 _vaultUtility.SetFileSecurityGroups(writeACLGroups, readACLGroups, masterID);
-
 
                 //Step6
                 //Set the state of the file to Released
@@ -518,13 +360,10 @@ namespace HutSoft.D3.DataMigration
 
                 //Step7
                 //Write the new Vault File data back to the database
-                long updatedFileMasterID = updatedFileVersion.MasterId;
-                long updatedFileVersionID = updatedFileVersion.Id;
-                string _status = "Write migration status back to database";
+                _agileUtility.WriteBackVaultFileInfo(updatedFileVersion.MasterId, updatedFileVersion.Id);
             }
             catch (Exception ex)
             {
-                string str = "UpdateFile(string localFilePath, string vaultFolder, Dictionary<string, string> fileProps, string[] readACLGroups, string[] writeACLGroups)";
                 _logUtility.Log(ex.Message);
             }
         }

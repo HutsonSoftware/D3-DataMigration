@@ -132,6 +132,15 @@ namespace HutSoft.D3.DataMigration
             return GetDataTable(sql);
         }
 
+        internal void WriteBackVaultFileInfo(long masterId, long fileId)
+        {
+            //Step7
+            //Write the new Vault File data back to the database
+            long updatedFileMasterID = masterId;
+            long updatedFileVersionID = fileId;
+            string status = "Write migration status back to database";
+        }
+
         private DataTable GetDataTable(string sql)
         {
             DataTable dt = null;
@@ -192,7 +201,5 @@ namespace HutSoft.D3.DataMigration
             }
             return dt;
         }
-
-        
     }
 }
