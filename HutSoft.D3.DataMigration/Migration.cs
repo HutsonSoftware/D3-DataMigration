@@ -128,7 +128,7 @@ namespace HutSoft.D3.DataMigration
             {
                 string guid = _backgroundWorkers[i].Guid.ToString();
 
-                System.Windows.Forms.Label labelThread = new System.Windows.Forms.Label()
+                Label labelThread = new System.Windows.Forms.Label()
                 {
                     Text = string.Format("Thread: {0}", (i + 1).ToString()),
                     Name = "lblThread" + guid,
@@ -145,7 +145,7 @@ namespace HutSoft.D3.DataMigration
                 };
                 tableLayoutPanel.Controls.Add(progressBar, 1, i);
 
-                System.Windows.Forms.Label labelProcessed = new System.Windows.Forms.Label()
+                Label labelProcessed = new System.Windows.Forms.Label()
                 {
                     Text = ProcessedLabel(0, 0, 0),
                     Name = "lblProcessed" + guid,
@@ -233,7 +233,7 @@ namespace HutSoft.D3.DataMigration
             MyBackgroundWorker bw = sender as MyBackgroundWorker;
             string guid = bw.Guid.ToString();
             ProgressBar pb;
-            System.Windows.Forms.Label lbl;
+            Label lbl;
 
             int processedFiles = e.ProgressPercentage;
             decimal percentageFilesProcessed = Math.Round(Decimal.Multiply(Decimal.Divide(processedFiles, bw.FileIds.Count), 100), 1);
@@ -249,7 +249,7 @@ namespace HutSoft.D3.DataMigration
                     }
                     else if (c.Name == ("lblProcessed" + guid))
                     {
-                        lbl = (System.Windows.Forms.Label)c;
+                        lbl = (Label)c;
                         lbl.Text = ProcessedLabel(processedFiles, bw.FileIds.Count, percentageFilesProcessed);
                     }
                 }
