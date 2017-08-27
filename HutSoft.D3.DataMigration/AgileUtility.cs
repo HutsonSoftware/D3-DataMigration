@@ -136,11 +136,17 @@ namespace HutSoft.D3.DataMigration
         {
             //Step7
             //Write the new Vault File data back to the database
-            long updatedFileMasterID = masterId;
-            long updatedFileVersionID = fileId;
-            string status = "Write migration status back to database";
+            try
+            {
+                long updatedFileMasterID = masterId;
+                long updatedFileVersionID = fileId;
+                string status = "Write migration status back to database";
+            }
+            catch (Exception ex)
+            {
+                throw (ex);
+            }
         }
-
         private DataTable GetDataTable(string sql)
         {
             DataTable dt = null;

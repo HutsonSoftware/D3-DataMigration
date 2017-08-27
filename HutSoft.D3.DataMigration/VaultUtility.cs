@@ -69,108 +69,116 @@ namespace HutSoft.D3.DataMigration
             //If not previous version, skip to Step4
             //if we have captured the File MasterID from a previous version we can use that to find
             //the latest version when checking in a newer version
-            FileInfo fi = new FileInfo(localFilePath);
-            if (!fi.Exists)
-            {
-                throw (new Exception("File does not exist: " + localFilePath));
-            }
-
-            //Search for file by name
-            PropDef[] filePropDefs = _webServiceManager.PropertyService.GetPropertyDefinitionsByEntityClassId("FILE");
-            PropDef fileNamePropDef = filePropDefs.Single(n => n.SysName == "FileName");
-
-            SrchCond fileNameCond = new SrchCond()
-            {
-                PropDefId = fileNamePropDef.Id,
-                PropTyp = PropertySearchType.SingleProperty,
-                SrchOper = 3,
-                SrchRule = SearchRuleType.Must,
-                SrchTxt = fi.Name
-            };
-
-            string bookmark = string.Empty;
-            SrchStatus status = null;
-            List<Autodesk.Connectivity.WebServices.File> foundFiles = new List<Autodesk.Connectivity.WebServices.File>();
-
-            while (status == null || foundFiles.Count < status.TotalHits)
-            {
-                Autodesk.Connectivity.WebServices.File[] results =
-                    _webServiceManager.DocumentService.FindFilesBySearchConditions(
-                        new SrchCond[] { fileNameCond }, null, null, false, true, ref bookmark, out status);
-
-                if (results != null)
-                    foundFiles.AddRange(results);
-                else
-                    break;
-            }
 
             Autodesk.Connectivity.WebServices.File existingFile = null;
 
-            //Duplicate Files found in Vault
-            //This shouldn't happen but we can check just in case
-            if (foundFiles.Count > 1)
+            try
             {
-                //TODO: Record the duplicate file error in the database
-                string fileIDs = "";
-                int i = 0;
-                foreach (var ff in foundFiles)
+                FileInfo fi = new FileInfo(localFilePath);
+                if (!fi.Exists)
                 {
-                    fileIDs = i == 0 ? ff.Id.ToString() : string.Format("{0}, {1}", fileIDs, ff.Id);
-                    i++;
-                }
-            }
-            //We found just one file with the same FileName so we'll check our new file in over this one
-            else
-            {
-                //Step 1A: Set previous File Version to WIP and Check Out
-                //Now that we have the latest version of the file we can change its state and check it out
-
-                //Set the MasterID so we can reference it later
-                existingFile = foundFiles.First();
-
-                //First we need to get a list of the Lifecycle States on this file
-                //We are using the same lifecycle definition for all files so this should be fairly straight forward
-                LfCycDef[] lcDefs = _webServiceManager.DocumentServiceExtensions.GetAllLifeCycleDefinitions();
-                LfCycDef stdLcDef = (from l in lcDefs
-                                     where l.DispName == _settings.LifeCycleDefName
-                                     select l).FirstOrDefault();
-                if (stdLcDef == null)
-                {
-                    //Lifecycle Definitions was not found, so handle this error
+                    throw (new Exception("File does not exist: " + localFilePath));
                 }
 
-                //Step 1B: Set the state of the file to WIP so we can Check In a new Revision
+                //Search for file by name
+                PropDef[] filePropDefs = _webServiceManager.PropertyService.GetPropertyDefinitionsByEntityClassId("FILE");
+                PropDef fileNamePropDef = filePropDefs.Single(n => n.SysName == "FileName");
 
-                //Check the state of the existing file
-
-                //Find the LfCycState that matches the To State Name and get it's ID
-                IdPair[] wipFileLCStates = _webServiceManager.DocumentServiceExtensions.GetLifeCycleStateIdsByFileMasterIds(new long[] { existingFile.MasterId });
-                foreach (var state in wipFileLCStates)
+                SrchCond fileNameCond = new SrchCond()
                 {
-                    LfCycState lfState = _webServiceManager.LifeCycleService.GetLifeCycleStatesByIds(new long[] { state.ValId }).First();
-                    if (lfState.DispName == _settings.WipStateName)
-                    {
-                        _settings.WipStateID = lfState.Id;
+                    PropDefId = fileNamePropDef.Id,
+                    PropTyp = PropertySearchType.SingleProperty,
+                    SrchOper = 3,
+                    SrchRule = SearchRuleType.Must,
+                    SrchTxt = fi.Name
+                };
+
+                string bookmark = string.Empty;
+                SrchStatus status = null;
+                List<Autodesk.Connectivity.WebServices.File> foundFiles = new List<Autodesk.Connectivity.WebServices.File>();
+
+                while (status == null || foundFiles.Count < status.TotalHits)
+                {
+                    Autodesk.Connectivity.WebServices.File[] results =
+                        _webServiceManager.DocumentService.FindFilesBySearchConditions(
+                            new SrchCond[] { fileNameCond }, null, null, false, true, ref bookmark, out status);
+
+                    if (results != null)
+                        foundFiles.AddRange(results);
+                    else
                         break;
+                }
+
+                //Duplicate Files found in Vault
+                //This shouldn't happen but we can check just in case
+                if (foundFiles.Count > 1)
+                {
+                    //TODO: Record the duplicate file error in the database
+                    string fileIDs = "";
+                    int i = 0;
+                    foreach (var ff in foundFiles)
+                    {
+                        fileIDs = i == 0 ? ff.Id.ToString() : string.Format("{0}, {1}", fileIDs, ff.Id);
+                        i++;
                     }
                 }
+                //We found just one file with the same FileName so we'll check our new file in over this one
+                else
+                {
+                    //Step 1A: Set previous File Version to WIP and Check Out
+                    //Now that we have the latest version of the file we can change its state and check it out
 
-                //Update the Files Lifecycle State
-                _webServiceManager.DocumentServiceExtensions.UpdateFileLifeCycleStates(new long[] { existingFile.MasterId }, new long[] { _settings.WipStateID }, "Data Migration");
+                    //Set the MasterID so we can reference it later
+                    existingFile = foundFiles.First();
 
-                //Get the latest version now that we have changed the state, as the state change may have created a new version
-                Autodesk.Connectivity.WebServices.File latestFileVersion =
-                    _webServiceManager.DocumentService.FindLatestFilesByMasterIds(new long[] { existingFile.MasterId }).First();
+                    //First we need to get a list of the Lifecycle States on this file
+                    //We are using the same lifecycle definition for all files so this should be fairly straight forward
+                    LfCycDef[] lcDefs = _webServiceManager.DocumentServiceExtensions.GetAllLifeCycleDefinitions();
+                    LfCycDef stdLcDef = (from l in lcDefs
+                                         where l.DispName == _settings.LifeCycleDefName
+                                         select l).FirstOrDefault();
+                    if (stdLcDef == null)
+                    {
+                        //Lifecycle Definitions was not found, so handle this error
+                    }
 
-                ByteArray ticket = null;
-                //Check out the file, but don't worry about downloading it, we're going to just upload a new version on top of this version
-                _webServiceManager.DocumentService.CheckoutFile(
-                    latestFileVersion.Id,
-                    CheckoutFileOptions.Master,
-                    null,
-                    null,
-                    "Data Migration - Updating File Revision",
-                    out ticket);
+                    //Step 1B: Set the state of the file to WIP so we can Check In a new Revision
+
+                    //Check the state of the existing file
+
+                    //Find the LfCycState that matches the To State Name and get it's ID
+                    IdPair[] wipFileLCStates = _webServiceManager.DocumentServiceExtensions.GetLifeCycleStateIdsByFileMasterIds(new long[] { existingFile.MasterId });
+                    foreach (var state in wipFileLCStates)
+                    {
+                        LfCycState lfState = _webServiceManager.LifeCycleService.GetLifeCycleStatesByIds(new long[] { state.ValId }).First();
+                        if (lfState.DispName == _settings.WipStateName)
+                        {
+                            _settings.WipStateID = lfState.Id;
+                            break;
+                        }
+                    }
+
+                    //Update the Files Lifecycle State
+                    _webServiceManager.DocumentServiceExtensions.UpdateFileLifeCycleStates(new long[] { existingFile.MasterId }, new long[] { _settings.WipStateID }, "Data Migration");
+
+                    //Get the latest version now that we have changed the state, as the state change may have created a new version
+                    Autodesk.Connectivity.WebServices.File latestFileVersion =
+                        _webServiceManager.DocumentService.FindLatestFilesByMasterIds(new long[] { existingFile.MasterId }).First();
+
+                    ByteArray ticket = null;
+                    //Check out the file, but don't worry about downloading it, we're going to just upload a new version on top of this version
+                    _webServiceManager.DocumentService.CheckoutFile(
+                        latestFileVersion.Id,
+                        CheckoutFileOptions.Master,
+                        null,
+                        null,
+                        "Data Migration - Updating File Revision",
+                        out ticket);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw (ex);
             }
             return existingFile;
         }
@@ -179,28 +187,35 @@ namespace HutSoft.D3.DataMigration
         {
             //Step2
             //Find the Folder we are checking into, if it doesn't exist then we'll create it
-            Folder vFolder = _webServiceManager.DocumentService.GetFolderByPath(vaultFolder);
-            if (vFolder == null)
+            try
             {
-                Folder currentFolder = _webServiceManager.DocumentService.GetFolderRoot();
-                string currentPath = "";
-                string[] folders = vaultFolder.Split('/');
-
-                //Recursively build the Vault Folders
-                foreach (var folder in folders)
+                Folder vFolder = _webServiceManager.DocumentService.GetFolderByPath(vaultFolder);
+                if (vFolder == null)
                 {
-                    currentPath = currentFolder.FullName + "/" + folder;
-                    Folder nextFolder = _webServiceManager.DocumentService.GetFolderByPath(currentPath);
-                    //If the folder doesn't exist then create it
-                    if (nextFolder == null)
+                    Folder currentFolder = _webServiceManager.DocumentService.GetFolderRoot();
+                    string currentPath = "";
+                    string[] folders = vaultFolder.Split('/');
+
+                    //Recursively build the Vault Folders
+                    foreach (var folder in folders)
                     {
-                        nextFolder = _webServiceManager.DocumentService.AddFolder(folder, currentFolder.Id, false);
+                        currentPath = currentFolder.FullName + "/" + folder;
+                        Folder nextFolder = _webServiceManager.DocumentService.GetFolderByPath(currentPath);
+                        //If the folder doesn't exist then create it
+                        if (nextFolder == null)
+                        {
+                            nextFolder = _webServiceManager.DocumentService.AddFolder(folder, currentFolder.Id, false);
+                        }
+
+                        currentFolder = nextFolder;
                     }
 
-                    currentFolder = nextFolder;
+                    vFolder = currentFolder;
                 }
-
-                vFolder = currentFolder;
+            }
+            catch (Exception ex)
+            {
+                throw (ex);
             }
         }
 
@@ -208,51 +223,58 @@ namespace HutSoft.D3.DataMigration
         {
             //Step3
             //Upload or checkin the file
-            DateTime fileLastModDate = new DateTime(); //TODO: pull this from DateTime from the database
-            FileStream fs = new FileStream(localFilePath, FileMode.Open);
-            BinaryReader br = new BinaryReader(fs);
-
-            byte[] buffer = null;
-            buffer = new byte[fs.Length];
-            fs.Read(buffer, 0, (int)fs.Length);
-            ByteArray fileBytes = new ByteArray() { Bytes = buffer };
-
-            Autodesk.Connectivity.WebServices.File newFileRev = null;
-            FileInfo fi = new FileInfo(localFilePath);
-            if (existingFile != null)
+            try
             {
-                //Step 3A: Check In the File
-                newFileRev = _webServiceManager.DocumentService.CheckinUploadedFile(
-                    existingFile.MasterId,
-                    "Data Migration - Added new file revision",
-                    false,
-                    fileLastModDate,
-                    null,
-                    null,
-                    false,
-                    fi.Name,
-                    FileClassification.DesignDocument,
-                    false,
-                    fileBytes);
+                DateTime fileLastModDate = new DateTime(); //TODO: pull this from DateTime from the database
+                FileStream fs = new FileStream(localFilePath, FileMode.Open);
+                BinaryReader br = new BinaryReader(fs);
+
+                byte[] buffer = null;
+                buffer = new byte[fs.Length];
+                fs.Read(buffer, 0, (int)fs.Length);
+                ByteArray fileBytes = new ByteArray() { Bytes = buffer };
+
+                Autodesk.Connectivity.WebServices.File newFileRev = null;
+                FileInfo fi = new FileInfo(localFilePath);
+                if (existingFile != null)
+                {
+                    //Step 3A: Check In the File
+                    newFileRev = _webServiceManager.DocumentService.CheckinUploadedFile(
+                        existingFile.MasterId,
+                        "Data Migration - Added new file revision",
+                        false,
+                        fileLastModDate,
+                        null,
+                        null,
+                        false,
+                        fi.Name,
+                        FileClassification.DesignDocument,
+                        false,
+                        fileBytes);
+                }
+                else
+                {
+                    //Step 3B: Upload In the File
+                    newFileRev = _webServiceManager.DocumentService.AddUploadedFile(
+                        fldrID,
+                        fi.Name,
+                        "Data Migration - Initial File Checkin",
+                        fileLastModDate,
+                        null,
+                        null,
+                        FileClassification.DesignDocument,
+                        false,
+                        fileBytes);
+                }
+
+                if (newFileRev == null)
+                {
+                    //TODO: Checkin Failed so handle the error
+                }
             }
-            else
+            catch (Exception ex)
             {
-                //Step 3B: Upload In the File
-                newFileRev = _webServiceManager.DocumentService.AddUploadedFile(
-                    fldrID,
-                    fi.Name,
-                    "Data Migration - Initial File Checkin",
-                    fileLastModDate,
-                    null,
-                    null,
-                    FileClassification.DesignDocument,
-                    false,
-                    fileBytes);
-            }
-
-            if (newFileRev == null)
-            {
-                //TODO: Checkin Failed so handle the error
+                throw (ex);
             }
         }
 
@@ -260,92 +282,106 @@ namespace HutSoft.D3.DataMigration
         {
             //Step4
             //Update the Vault File Properties
-            PropDef[] filePropDefs = _webServiceManager.PropertyService.GetPropertyDefinitionsByEntityClassId("FILE");
-            List<PropInstParamArray> updateProps = new List<PropInstParamArray>();
-            foreach (string filePropKey in fileProps.Keys)
+            try
             {
-                PropDef nPropDef = filePropDefs.FirstOrDefault(n => n.DispName == filePropKey);
-                if (nPropDef != null)
+                PropDef[] filePropDefs = _webServiceManager.PropertyService.GetPropertyDefinitionsByEntityClassId("FILE");
+                List<PropInstParamArray> updateProps = new List<PropInstParamArray>();
+                foreach (string filePropKey in fileProps.Keys)
                 {
-                    PropInstParam propInstParam = new PropInstParam();
-                    propInstParam.PropDefId = nPropDef.Id;
-                    propInstParam.Val = fileProps[filePropKey];
+                    PropDef nPropDef = filePropDefs.FirstOrDefault(n => n.DispName == filePropKey);
+                    if (nPropDef != null)
+                    {
+                        PropInstParam propInstParam = new PropInstParam();
+                        propInstParam.PropDefId = nPropDef.Id;
+                        propInstParam.Val = fileProps[filePropKey];
 
-                    PropInstParamArray propInstParamArr = new PropInstParamArray();
-                    propInstParamArr.Items = new PropInstParam[] { propInstParam };
+                        PropInstParamArray propInstParamArr = new PropInstParamArray();
+                        propInstParamArr.Items = new PropInstParam[] { propInstParam };
 
-                    updateProps.Add(propInstParamArr);
+                        updateProps.Add(propInstParamArr);
+                    }
+
+                    else
+                    {
+                        //TODO: Property Not Found
+                        //Keep going but make note of the missing Vault Property on the Database record
+                    }
                 }
-
-                else
-                {
-                    //TODO: Property Not Found
-                    //Keep going but make note of the missing Vault Property on the Database record
-                }
+                _webServiceManager.DocumentService.UpdateFileProperties(new long[] { masterID }, updateProps.ToArray());
             }
-            _webServiceManager.DocumentService.UpdateFileProperties(new long[] { masterID }, updateProps.ToArray());
+            catch (Exception ex)
+            {
+                throw (ex);
+            }
         }
 
         internal void SetFileSecurityGroups(string[] writeACLGroups, string[] readACLGroups, long masterID)
         {
             //Step5
             //Set the file security Groups (Access Control List)
-            AccessPermis readAccessPermission = new AccessPermis();
-            readAccessPermission.Id = 1;
-            readAccessPermission.Val = true;
-
-            AccessPermis writeAccessPermission = new AccessPermis();
-            writeAccessPermission.Id = 2;
-            writeAccessPermission.Val = true;
-
-            //AccessPermis deleteAccessPermission = new AccessPermis();
-            //deleteAccessPermission.Id = 3;
-            //deleteAccessPermission.Val = true;
-
-            //Set the Read/Write ACL Groups
-            foreach (var aclGroup in writeACLGroups)
+            try
             {
-                Group group = _webServiceManager.AdminService.GetGroupByName(aclGroup);
-                if (group != null)
+                AccessPermis readAccessPermission = new AccessPermis();
+                readAccessPermission.Id = 1;
+                readAccessPermission.Val = true;
+
+                AccessPermis writeAccessPermission = new AccessPermis();
+                writeAccessPermission.Id = 2;
+                writeAccessPermission.Val = true;
+
+                //AccessPermis deleteAccessPermission = new AccessPermis();
+                //deleteAccessPermission.Id = 3;
+                //deleteAccessPermission.Val = true;
+
+                //Set the Read/Write ACL Groups
+                foreach (var aclGroup in writeACLGroups)
                 {
-                    ACE ace = new ACE();
-                    ace.UserGrpId = group.Id;
-                    ace.PermisArray = new AccessPermis[] { readAccessPermission, writeAccessPermission };
-                    ACE[] aces = new ACE[1];
+                    Group group = _webServiceManager.AdminService.GetGroupByName(aclGroup);
+                    if (group != null)
+                    {
+                        ACE ace = new ACE();
+                        ace.UserGrpId = group.Id;
+                        ace.PermisArray = new AccessPermis[] { readAccessPermission, writeAccessPermission };
+                        ACE[] aces = new ACE[1];
 
-                    ACL myAcl = _webServiceManager.SecurityService.AddSystemACL(aces);
+                        ACL myAcl = _webServiceManager.SecurityService.AddSystemACL(aces);
 
-                    _webServiceManager.SecurityService.SetSystemACLs(new long[] { masterID }, myAcl.Id);
+                        _webServiceManager.SecurityService.SetSystemACLs(new long[] { masterID }, myAcl.Id);
 
+                    }
+                    else
+                    {
+                        //TODO: Security Group not found so log the error in the database
+                    }
                 }
-                else
+
+                //Set the Read Only ACL Groups
+                foreach (var aclGroup in readACLGroups)
                 {
-                    //TODO: Security Group not found so log the error in the database
+                    Group group = _webServiceManager.AdminService.GetGroupByName(aclGroup);
+                    if (group != null)
+                    {
+                        ACE ace = new ACE();
+                        ace.UserGrpId = group.Id;
+
+                        ace.PermisArray = new AccessPermis[] { readAccessPermission };
+
+                        ACE[] aces = new ACE[1];
+                        aces[0] = ace;
+
+                        ACL myACL = _webServiceManager.SecurityService.AddSystemACL(aces);
+
+                        _webServiceManager.SecurityService.SetSystemACLs(new long[] { masterID }, myACL.Id);
+                    }
+                    else
+                    {
+                        //TODO: Security Group not found so log the error in the database
+                    }
                 }
             }
-
-            //Set the Read Only ACL Groups
-            foreach (var aclGroup in readACLGroups)
+            catch (Exception ex)
             {
-                Group group = _webServiceManager.AdminService.GetGroupByName(aclGroup);
-                if (group != null)
-                {
-                    ACE ace = new ACE();
-                    ace.UserGrpId = group.Id;
-
-                    ace.PermisArray = new AccessPermis[] { readAccessPermission };
-
-                    ACE[] aces = new ACE[1];
-                    aces[0] = ace;
-
-                    ACL myACL = _webServiceManager.SecurityService.AddSystemACL(aces);
-
-                    _webServiceManager.SecurityService.SetSystemACLs(new long[] { masterID }, myACL.Id);
-                }
-                else
-                {
-                    //TODO: Security Group not found so log the error in the database
-                }
+                throw (ex);
             }
         }
 
@@ -354,23 +390,32 @@ namespace HutSoft.D3.DataMigration
             //Step6
             //Set the state of the file to Released
             //Find the LfCycState that matches the To State Name and get its ID
-            IdPair[] releasedRildLCStates = _webServiceManager.DocumentServiceExtensions.GetLifeCycleStateIdsByFileMasterIds(new long[] { masterID });
-            foreach (var state in releasedRildLCStates)
+            Autodesk.Connectivity.WebServices.File file = null;
+            try
             {
-                LfCycState lfState = _webServiceManager.LifeCycleService.GetLifeCycleStatesByIds(new long[] { state.ValId }).First();
-                if (lfState.DispName == _settings.ReleasedStateName)
+                IdPair[] releasedRildLCStates = _webServiceManager.DocumentServiceExtensions.GetLifeCycleStateIdsByFileMasterIds(new long[] { masterID });
+                foreach (var state in releasedRildLCStates)
                 {
-                    _settings.ReleasedStateID = lfState.Id;
-                    break;
+                    LfCycState lfState = _webServiceManager.LifeCycleService.GetLifeCycleStatesByIds(new long[] { state.ValId }).First();
+                    if (lfState.DispName == _settings.ReleasedStateName)
+                    {
+                        _settings.ReleasedStateID = lfState.Id;
+                        break;
+                    }
                 }
+
+                //Update the Files Lifecycl State
+                _webServiceManager.DocumentServiceExtensions.UpdateFileLifeCycleStates(
+                    new long[] { masterID }, new long[] { _settings.ReleasedStateID }, "Data Migration - Released new File Revision");
+
+                //Get the latest version now that we have changed the state, as the state change may have created a new version
+                file = _webServiceManager.DocumentService.FindLatestFilesByMasterIds(new long[] { masterID }).First();
             }
-
-            //Update the Files Lifecycl State
-            _webServiceManager.DocumentServiceExtensions.UpdateFileLifeCycleStates(
-                new long[] { masterID }, new long[] { _settings.ReleasedStateID }, "Data Migration - Released new File Revision");
-
-            //Get the latest version now that we have changed the state, as the state change may have created a new version
-            return _webServiceManager.DocumentService.FindLatestFilesByMasterIds(new long[] { masterID }).First();
+            catch (Exception ex)
+            {
+                throw (ex);
+            }
+            return file;
         }
     }
 }
