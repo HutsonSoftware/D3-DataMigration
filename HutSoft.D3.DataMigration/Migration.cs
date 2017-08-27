@@ -323,6 +323,7 @@ namespace HutSoft.D3.DataMigration
         {
             try
             {
+                //Step0: Login to Vault
                 _vaultUtility.LoginToVault();
 
 
@@ -363,7 +364,9 @@ namespace HutSoft.D3.DataMigration
 
                 while (status == null || foundFiles.Count < status.TotalHits)
                 {
-                    Autodesk.Connectivity.WebServices.File[] results = _vaultUtility.WebServiceManager.DocumentService.FindFilesBySearchConditions(new SrchCond[] { fileNameCond }, null, null, false, true, ref bookmark, out status);
+                    Autodesk.Connectivity.WebServices.File[] results = 
+                        _vaultUtility.WebServiceManager.DocumentService.FindFilesBySearchConditions(
+                            new SrchCond[] { fileNameCond }, null, null, false, true, ref bookmark, out status);
 
                     if (results != null)
                         foundFiles.AddRange(results);
@@ -445,29 +448,7 @@ namespace HutSoft.D3.DataMigration
                 long fldrID = -1;
                 //TODO: Set this via an input or config
                 //Find the Folder we are checking into, if it doesn't exist then we'll create it
-                Folder vFolder = _vaultUtility.WebServiceManager.DocumentService.GetFolderByPath(vaultFolder);
-                if (vFolder == null)
-                {
-                    Folder currentFolder = _vaultUtility.WebServiceManager.DocumentService.GetFolderRoot();
-                    string currentPath = "";
-                    string[] folders = vaultFolder.Split('/');
-
-                    //Recursively build the Vault Folders
-                    foreach (var fldr in folders)
-                    {
-                        currentPath = currentFolder.FullName + "/" + fldr;
-                        Folder nextFolder = _vaultUtility.WebServiceManager.DocumentService.GetFolderByPath(currentPath);
-                        //If the folder doesn't exist then create it
-                        if (nextFolder == null)
-                        {
-                            nextFolder = _vaultUtility.WebServiceManager.DocumentService.AddFolder(fldr, currentFolder.Id, false);
-                        }
-
-                        currentFolder = nextFolder;
-                    }
-
-                    vFolder = currentFolder;
-                }
+                _vaultUtility.VerifyVaultFolderExists(vaultFolder);
 
 
 
@@ -520,116 +501,20 @@ namespace HutSoft.D3.DataMigration
                 }
 
 
-
-
                 //Step4
                 //Update the Vault File Properties
-                List<PropInstParamArray> updateProps = new List<PropInstParamArray>();
-                foreach (string propName in fileProps.Keys)
-                {
-                    PropDef nPropDef = filePropDefs.FirstOrDefault(n => n.DispName == propName);
-                    if (nPropDef != null)
-                    {
-                        PropInstParam propInstParam = new PropInstParam();
-                        propInstParam.PropDefId = nPropDef.Id;
-                        propInstParam.Val = fileProps[propName];
-
-                        PropInstParamArray propInstParamArr = new PropInstParamArray();
-                        propInstParamArr.Items = new PropInstParam[] { propInstParam };
-
-                        updateProps.Add(propInstParamArr);
-                    }
-
-                    else
-                    {
-                        //TODO: Property Not Found
-                        //Keep going but make note of the missing Vault Property on the Database record
-                    }
-                }
-                _vaultUtility.WebServiceManager.DocumentService.UpdateFileProperties(new long[] { masterID }, updateProps.ToArray());
+                _vaultUtility.UpdateVaultFileProperties(fileProps, filePropDefs, masterID);
 
 
                 //Step5
                 //Set the file security Groups (Access Control List)
-                AccessPermis readAccessPermission = new AccessPermis();
-                readAccessPermission.Id = 1;
-                readAccessPermission.Val = true;
-
-                AccessPermis writeAccessPermission = new AccessPermis();
-                writeAccessPermission.Id = 2;
-                writeAccessPermission.Val = true;
-
-                AccessPermis deleteAccessPermission = new AccessPermis();
-                deleteAccessPermission.Id = 3;
-                deleteAccessPermission.Val = true;
-
-                //Set the Read/Write ACL Groups
-                foreach (var aclGroup in writeACLGroups)
-                {
-                    Group group = _vaultUtility.WebServiceManager.AdminService.GetGroupByName(aclGroup);
-                    if (group != null)
-                    {
-                        ACE ace = new ACE();
-                        ace.UserGrpId = group.Id;
-                        ace.PermisArray = new AccessPermis[] { readAccessPermission, writeAccessPermission };
-                        ACE[] aces = new ACE[1];
-
-                        ACL myAcl = _vaultUtility.WebServiceManager.SecurityService.AddSystemACL(aces);
-
-                        _vaultUtility.WebServiceManager.SecurityService.SetSystemACLs(new long[] { masterID }, myAcl.Id);
-
-                    }
-                    else
-                    {
-                        //TODO: Security Group not found so log the error in the database
-                    }
-                }
-
-                //Set the Read Only ACL Groups
-                foreach (var aclGroup in readACLGroups)
-                {
-                    Group group = _vaultUtility.WebServiceManager.AdminService.GetGroupByName(aclGroup);
-                    if (group != null)
-                    {
-                        ACE ace = new ACE();
-                        ace.UserGrpId = group.Id;
-
-                        ace.PermisArray = new AccessPermis[] { readAccessPermission };
-
-                        ACE[] aces = new ACE[1];
-                        aces[0] = ace;
-
-                        ACL myACL = _vaultUtility.WebServiceManager.SecurityService.AddSystemACL(aces);
-
-                        _vaultUtility.WebServiceManager.SecurityService.SetSystemACLs(new long[] { masterID }, myACL.Id);
-                    }
-                    else
-                    {
-                        //TODO: Security Group not found so log the error in the database
-                    }
-                }
+                _vaultUtility.SetFileSecurityGroups(writeACLGroups, readACLGroups, masterID);
 
 
                 //Step6
                 //Set the state of the file to Released
                 //Find the LfCycState that matches the To State Name and get its ID
-                IdPair[] releasedRildLCStates = _vaultUtility.WebServiceManager.DocumentServiceExtensions.GetLifeCycleStateIdsByFileMasterIds(new long[] { masterID });
-                foreach (var state in releasedRildLCStates)
-                {
-                    LfCycState lfState = _vaultUtility.WebServiceManager.LifeCycleService.GetLifeCycleStatesByIds(new long[] { state.ValId }).First();
-                    if (lfState.DispName == _settings.ReleasedStateName)
-                    {
-                        _settings.ReleasedStateID = lfState.Id;
-                        break;
-                    }
-                }
-
-                //Update the Files Lifecycl State
-                _vaultUtility.WebServiceManager.DocumentServiceExtensions.UpdateFileLifeCycleStates(new long[] { masterID }, new long[] { _settings.ReleasedStateID }, "Data Migration - Released new File Revision");
-
-                //Get the latest version now that we have changed the state, as the state change may have created a new version
-                Autodesk.Connectivity.WebServices.File updatedFileVersion = _vaultUtility.WebServiceManager.DocumentService.FindLatestFilesByMasterIds(new long[] { masterID }).First();
-
+                Autodesk.Connectivity.WebServices.File updatedFileVersion = _vaultUtility.UpdateLifeCycleStateInfo(masterID);
 
                 //Step7
                 //Write the new Vault File data back to the database
