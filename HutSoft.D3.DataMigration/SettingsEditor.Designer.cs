@@ -30,6 +30,8 @@
         {
             this.components = new System.ComponentModel.Container();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.label12 = new System.Windows.Forms.Label();
+            this.DesignsRootPath = new System.Windows.Forms.TextBox();
             this.TestAgileOracleConnection = new System.Windows.Forms.Button();
             this.TestAgileSQLiteConnection = new System.Windows.Forms.Button();
             this.AgileOracleConnectionString = new System.Windows.Forms.TextBox();
@@ -39,18 +41,7 @@
             this.Save = new System.Windows.Forms.Button();
             this.Cancel = new System.Windows.Forms.Button();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
-            this.TestVaultConnection = new System.Windows.Forms.Button();
-            this.label6 = new System.Windows.Forms.Label();
-            this.VaultPassword = new System.Windows.Forms.TextBox();
-            this.label5 = new System.Windows.Forms.Label();
-            this.VaultUserName = new System.Windows.Forms.TextBox();
-            this.label4 = new System.Windows.Forms.Label();
-            this.VaultInstance = new System.Windows.Forms.TextBox();
-            this.label3 = new System.Windows.Forms.Label();
-            this.VaultServer = new System.Windows.Forms.TextBox();
-            this.groupBox3 = new System.Windows.Forms.GroupBox();
-            this.label12 = new System.Windows.Forms.Label();
-            this.DesignsRootPath = new System.Windows.Forms.TextBox();
+            this.VerifyVariables = new System.Windows.Forms.Button();
             this.label11 = new System.Windows.Forms.Label();
             this.LifeCycleDefName = new System.Windows.Forms.TextBox();
             this.label10 = new System.Windows.Forms.Label();
@@ -61,10 +52,18 @@
             this.WipStateID = new System.Windows.Forms.TextBox();
             this.label7 = new System.Windows.Forms.Label();
             this.WipStateName = new System.Windows.Forms.TextBox();
+            this.TestVaultConnection = new System.Windows.Forms.Button();
+            this.label6 = new System.Windows.Forms.Label();
+            this.VaultPassword = new System.Windows.Forms.TextBox();
+            this.label5 = new System.Windows.Forms.Label();
+            this.VaultUserName = new System.Windows.Forms.TextBox();
+            this.label4 = new System.Windows.Forms.Label();
+            this.VaultInstance = new System.Windows.Forms.TextBox();
+            this.label3 = new System.Windows.Forms.Label();
+            this.VaultServer = new System.Windows.Forms.TextBox();
             this.errorProvider1 = new System.Windows.Forms.ErrorProvider(this.components);
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
-            this.groupBox3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -72,6 +71,8 @@
             // 
             this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox1.Controls.Add(this.label12);
+            this.groupBox1.Controls.Add(this.DesignsRootPath);
             this.groupBox1.Controls.Add(this.TestAgileOracleConnection);
             this.groupBox1.Controls.Add(this.TestAgileSQLiteConnection);
             this.groupBox1.Controls.Add(this.AgileOracleConnectionString);
@@ -80,10 +81,28 @@
             this.groupBox1.Controls.Add(this.label1);
             this.groupBox1.Location = new System.Drawing.Point(12, 12);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(571, 133);
+            this.groupBox1.Size = new System.Drawing.Size(571, 174);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Agile Connection Strings";
+            // 
+            // label12
+            // 
+            this.label12.AutoSize = true;
+            this.label12.Location = new System.Drawing.Point(6, 132);
+            this.label12.Name = "label12";
+            this.label12.Size = new System.Drawing.Size(93, 13);
+            this.label12.TabIndex = 24;
+            this.label12.Text = "DesignsRootPath:";
+            // 
+            // DesignsRootPath
+            // 
+            this.DesignsRootPath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.DesignsRootPath.Location = new System.Drawing.Point(120, 129);
+            this.DesignsRootPath.Name = "DesignsRootPath";
+            this.DesignsRootPath.Size = new System.Drawing.Size(418, 20);
+            this.DesignsRootPath.TabIndex = 23;
             // 
             // TestAgileOracleConnection
             // 
@@ -113,7 +132,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.AgileOracleConnectionString.Location = new System.Drawing.Point(75, 74);
             this.AgileOracleConnectionString.Name = "AgileOracleConnectionString";
-            this.AgileOracleConnectionString.Size = new System.Drawing.Size(490, 20);
+            this.AgileOracleConnectionString.Size = new System.Drawing.Size(463, 20);
             this.AgileOracleConnectionString.TabIndex = 3;
             // 
             // AgileSQLiteConnectionString
@@ -122,7 +141,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.AgileSQLiteConnectionString.Location = new System.Drawing.Point(75, 19);
             this.AgileSQLiteConnectionString.Name = "AgileSQLiteConnectionString";
-            this.AgileSQLiteConnectionString.Size = new System.Drawing.Size(490, 20);
+            this.AgileSQLiteConnectionString.Size = new System.Drawing.Size(463, 20);
             this.AgileSQLiteConnectionString.TabIndex = 2;
             // 
             // label2
@@ -146,7 +165,7 @@
             // Save
             // 
             this.Save.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.Save.Location = new System.Drawing.Point(427, 500);
+            this.Save.Location = new System.Drawing.Point(394, 517);
             this.Save.Name = "Save";
             this.Save.Size = new System.Drawing.Size(75, 23);
             this.Save.TabIndex = 0;
@@ -158,7 +177,7 @@
             // 
             this.Cancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.Cancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.Cancel.Location = new System.Drawing.Point(508, 500);
+            this.Cancel.Location = new System.Drawing.Point(475, 517);
             this.Cancel.Name = "Cancel";
             this.Cancel.Size = new System.Drawing.Size(75, 23);
             this.Cancel.TabIndex = 1;
@@ -170,6 +189,17 @@
             // 
             this.groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox2.Controls.Add(this.VerifyVariables);
+            this.groupBox2.Controls.Add(this.label11);
+            this.groupBox2.Controls.Add(this.LifeCycleDefName);
+            this.groupBox2.Controls.Add(this.label10);
+            this.groupBox2.Controls.Add(this.ReleasedStateID);
+            this.groupBox2.Controls.Add(this.label9);
+            this.groupBox2.Controls.Add(this.ReleasedStateName);
+            this.groupBox2.Controls.Add(this.label8);
+            this.groupBox2.Controls.Add(this.WipStateID);
+            this.groupBox2.Controls.Add(this.label7);
+            this.groupBox2.Controls.Add(this.WipStateName);
             this.groupBox2.Controls.Add(this.TestVaultConnection);
             this.groupBox2.Controls.Add(this.label6);
             this.groupBox2.Controls.Add(this.VaultPassword);
@@ -179,12 +209,113 @@
             this.groupBox2.Controls.Add(this.VaultInstance);
             this.groupBox2.Controls.Add(this.label3);
             this.groupBox2.Controls.Add(this.VaultServer);
-            this.groupBox2.Location = new System.Drawing.Point(12, 151);
+            this.groupBox2.Location = new System.Drawing.Point(12, 192);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(571, 162);
+            this.groupBox2.Size = new System.Drawing.Size(571, 319);
             this.groupBox2.TabIndex = 2;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Vault";
+            // 
+            // VerifyVariables
+            // 
+            this.VerifyVariables.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.VerifyVariables.Location = new System.Drawing.Point(415, 285);
+            this.VerifyVariables.Name = "VerifyVariables";
+            this.VerifyVariables.Size = new System.Drawing.Size(123, 23);
+            this.VerifyVariables.TabIndex = 34;
+            this.VerifyVariables.Text = "Verify Variables";
+            this.VerifyVariables.UseVisualStyleBackColor = true;
+            this.VerifyVariables.Click += new System.EventHandler(this.VerifyVariables_Click);
+            // 
+            // label11
+            // 
+            this.label11.AutoSize = true;
+            this.label11.Location = new System.Drawing.Point(6, 158);
+            this.label11.Name = "label11";
+            this.label11.Size = new System.Drawing.Size(98, 13);
+            this.label11.TabIndex = 33;
+            this.label11.Text = "LifeCycleDefName:";
+            // 
+            // LifeCycleDefName
+            // 
+            this.LifeCycleDefName.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.LifeCycleDefName.Location = new System.Drawing.Point(120, 155);
+            this.LifeCycleDefName.Name = "LifeCycleDefName";
+            this.LifeCycleDefName.Size = new System.Drawing.Size(418, 20);
+            this.LifeCycleDefName.TabIndex = 32;
+            // 
+            // label10
+            // 
+            this.label10.AutoSize = true;
+            this.label10.Location = new System.Drawing.Point(6, 262);
+            this.label10.Name = "label10";
+            this.label10.Size = new System.Drawing.Size(91, 13);
+            this.label10.TabIndex = 31;
+            this.label10.Text = "ReleasedStateID:";
+            // 
+            // ReleasedStateID
+            // 
+            this.ReleasedStateID.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.ReleasedStateID.Location = new System.Drawing.Point(120, 259);
+            this.ReleasedStateID.Name = "ReleasedStateID";
+            this.ReleasedStateID.Size = new System.Drawing.Size(418, 20);
+            this.ReleasedStateID.TabIndex = 30;
+            // 
+            // label9
+            // 
+            this.label9.AutoSize = true;
+            this.label9.Location = new System.Drawing.Point(6, 236);
+            this.label9.Name = "label9";
+            this.label9.Size = new System.Drawing.Size(108, 13);
+            this.label9.TabIndex = 29;
+            this.label9.Text = "ReleasedStateName:";
+            // 
+            // ReleasedStateName
+            // 
+            this.ReleasedStateName.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.ReleasedStateName.Location = new System.Drawing.Point(120, 233);
+            this.ReleasedStateName.Name = "ReleasedStateName";
+            this.ReleasedStateName.Size = new System.Drawing.Size(418, 20);
+            this.ReleasedStateName.TabIndex = 28;
+            // 
+            // label8
+            // 
+            this.label8.AutoSize = true;
+            this.label8.Location = new System.Drawing.Point(6, 210);
+            this.label8.Name = "label8";
+            this.label8.Size = new System.Drawing.Size(65, 13);
+            this.label8.TabIndex = 27;
+            this.label8.Text = "WipStateID:";
+            // 
+            // WipStateID
+            // 
+            this.WipStateID.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.WipStateID.Location = new System.Drawing.Point(120, 207);
+            this.WipStateID.Name = "WipStateID";
+            this.WipStateID.Size = new System.Drawing.Size(418, 20);
+            this.WipStateID.TabIndex = 26;
+            // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(6, 184);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(82, 13);
+            this.label7.TabIndex = 25;
+            this.label7.Text = "WipStateName:";
+            // 
+            // WipStateName
+            // 
+            this.WipStateName.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.WipStateName.Location = new System.Drawing.Point(120, 181);
+            this.WipStateName.Name = "WipStateName";
+            this.WipStateName.Size = new System.Drawing.Size(418, 20);
+            this.WipStateName.TabIndex = 24;
             // 
             // TestVaultConnection
             // 
@@ -212,7 +343,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.VaultPassword.Location = new System.Drawing.Point(75, 97);
             this.VaultPassword.Name = "VaultPassword";
-            this.VaultPassword.Size = new System.Drawing.Size(490, 20);
+            this.VaultPassword.Size = new System.Drawing.Size(463, 20);
             this.VaultPassword.TabIndex = 9;
             // 
             // label5
@@ -230,7 +361,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.VaultUserName.Location = new System.Drawing.Point(75, 71);
             this.VaultUserName.Name = "VaultUserName";
-            this.VaultUserName.Size = new System.Drawing.Size(490, 20);
+            this.VaultUserName.Size = new System.Drawing.Size(463, 20);
             this.VaultUserName.TabIndex = 7;
             // 
             // label4
@@ -248,7 +379,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.VaultInstance.Location = new System.Drawing.Point(75, 45);
             this.VaultInstance.Name = "VaultInstance";
-            this.VaultInstance.Size = new System.Drawing.Size(490, 20);
+            this.VaultInstance.Size = new System.Drawing.Size(463, 20);
             this.VaultInstance.TabIndex = 5;
             // 
             // label3
@@ -266,143 +397,8 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.VaultServer.Location = new System.Drawing.Point(75, 19);
             this.VaultServer.Name = "VaultServer";
-            this.VaultServer.Size = new System.Drawing.Size(490, 20);
+            this.VaultServer.Size = new System.Drawing.Size(463, 20);
             this.VaultServer.TabIndex = 3;
-            // 
-            // groupBox3
-            // 
-            this.groupBox3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.groupBox3.Controls.Add(this.label12);
-            this.groupBox3.Controls.Add(this.DesignsRootPath);
-            this.groupBox3.Controls.Add(this.label11);
-            this.groupBox3.Controls.Add(this.LifeCycleDefName);
-            this.groupBox3.Controls.Add(this.label10);
-            this.groupBox3.Controls.Add(this.ReleasedStateID);
-            this.groupBox3.Controls.Add(this.label9);
-            this.groupBox3.Controls.Add(this.ReleasedStateName);
-            this.groupBox3.Controls.Add(this.label8);
-            this.groupBox3.Controls.Add(this.WipStateID);
-            this.groupBox3.Controls.Add(this.label7);
-            this.groupBox3.Controls.Add(this.WipStateName);
-            this.groupBox3.Location = new System.Drawing.Point(12, 319);
-            this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(571, 175);
-            this.groupBox3.TabIndex = 3;
-            this.groupBox3.TabStop = false;
-            this.groupBox3.Text = "Application Variables";
-            // 
-            // label12
-            // 
-            this.label12.AutoSize = true;
-            this.label12.Location = new System.Drawing.Point(6, 150);
-            this.label12.Name = "label12";
-            this.label12.Size = new System.Drawing.Size(93, 13);
-            this.label12.TabIndex = 22;
-            this.label12.Text = "DesignsRootPath:";
-            // 
-            // DesignsRootPath
-            // 
-            this.DesignsRootPath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.DesignsRootPath.Location = new System.Drawing.Point(120, 147);
-            this.DesignsRootPath.Name = "DesignsRootPath";
-            this.DesignsRootPath.Size = new System.Drawing.Size(445, 20);
-            this.DesignsRootPath.TabIndex = 21;
-            // 
-            // label11
-            // 
-            this.label11.AutoSize = true;
-            this.label11.Location = new System.Drawing.Point(6, 20);
-            this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(98, 13);
-            this.label11.TabIndex = 20;
-            this.label11.Text = "LifeCycleDefName:";
-            // 
-            // LifeCycleDefName
-            // 
-            this.LifeCycleDefName.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.LifeCycleDefName.Location = new System.Drawing.Point(120, 17);
-            this.LifeCycleDefName.Name = "LifeCycleDefName";
-            this.LifeCycleDefName.Size = new System.Drawing.Size(445, 20);
-            this.LifeCycleDefName.TabIndex = 19;
-            // 
-            // label10
-            // 
-            this.label10.AutoSize = true;
-            this.label10.Location = new System.Drawing.Point(6, 124);
-            this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(91, 13);
-            this.label10.TabIndex = 18;
-            this.label10.Text = "ReleasedStateID:";
-            // 
-            // ReleasedStateID
-            // 
-            this.ReleasedStateID.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.ReleasedStateID.Location = new System.Drawing.Point(120, 121);
-            this.ReleasedStateID.Name = "ReleasedStateID";
-            this.ReleasedStateID.Size = new System.Drawing.Size(445, 20);
-            this.ReleasedStateID.TabIndex = 17;
-            this.ReleasedStateID.Validating += new System.ComponentModel.CancelEventHandler(this.TextBoxIsNumeric_Validating);
-            this.ReleasedStateID.Validated += new System.EventHandler(this.TexBoxIsNumeric_Validated);
-            // 
-            // label9
-            // 
-            this.label9.AutoSize = true;
-            this.label9.Location = new System.Drawing.Point(6, 98);
-            this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(108, 13);
-            this.label9.TabIndex = 16;
-            this.label9.Text = "ReleasedStateName:";
-            // 
-            // ReleasedStateName
-            // 
-            this.ReleasedStateName.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.ReleasedStateName.Location = new System.Drawing.Point(120, 95);
-            this.ReleasedStateName.Name = "ReleasedStateName";
-            this.ReleasedStateName.Size = new System.Drawing.Size(445, 20);
-            this.ReleasedStateName.TabIndex = 15;
-            // 
-            // label8
-            // 
-            this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(6, 72);
-            this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(65, 13);
-            this.label8.TabIndex = 14;
-            this.label8.Text = "WipStateID:";
-            // 
-            // WipStateID
-            // 
-            this.WipStateID.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.WipStateID.Location = new System.Drawing.Point(120, 69);
-            this.WipStateID.Name = "WipStateID";
-            this.WipStateID.Size = new System.Drawing.Size(445, 20);
-            this.WipStateID.TabIndex = 13;
-            this.WipStateID.Validating += new System.ComponentModel.CancelEventHandler(this.TextBoxIsNumeric_Validating);
-            this.WipStateID.Validated += new System.EventHandler(this.TexBoxIsNumeric_Validated);
-            // 
-            // label7
-            // 
-            this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(6, 46);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(82, 13);
-            this.label7.TabIndex = 12;
-            this.label7.Text = "WipStateName:";
-            // 
-            // WipStateName
-            // 
-            this.WipStateName.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.WipStateName.Location = new System.Drawing.Point(120, 43);
-            this.WipStateName.Name = "WipStateName";
-            this.WipStateName.Size = new System.Drawing.Size(445, 20);
-            this.WipStateName.TabIndex = 11;
             // 
             // errorProvider1
             // 
@@ -414,8 +410,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.Cancel;
-            this.ClientSize = new System.Drawing.Size(595, 535);
-            this.Controls.Add(this.groupBox3);
+            this.ClientSize = new System.Drawing.Size(595, 549);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.Save);
             this.Controls.Add(this.Cancel);
@@ -427,8 +422,6 @@
             this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
-            this.groupBox3.ResumeLayout(false);
-            this.groupBox3.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider1)).EndInit();
             this.ResumeLayout(false);
 
@@ -455,7 +448,12 @@
         private System.Windows.Forms.TextBox VaultInstance;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.TextBox VaultServer;
-        private System.Windows.Forms.GroupBox groupBox3;
+        private System.Windows.Forms.ErrorProvider errorProvider1;
+        private System.Windows.Forms.Label label12;
+        private System.Windows.Forms.TextBox DesignsRootPath;
+        private System.Windows.Forms.Button VerifyVariables;
+        private System.Windows.Forms.Label label11;
+        private System.Windows.Forms.TextBox LifeCycleDefName;
         private System.Windows.Forms.Label label10;
         private System.Windows.Forms.TextBox ReleasedStateID;
         private System.Windows.Forms.Label label9;
@@ -464,10 +462,5 @@
         private System.Windows.Forms.TextBox WipStateID;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.TextBox WipStateName;
-        private System.Windows.Forms.Label label11;
-        private System.Windows.Forms.TextBox LifeCycleDefName;
-        private System.Windows.Forms.Label label12;
-        private System.Windows.Forms.TextBox DesignsRootPath;
-        private System.Windows.Forms.ErrorProvider errorProvider1;
     }
 }

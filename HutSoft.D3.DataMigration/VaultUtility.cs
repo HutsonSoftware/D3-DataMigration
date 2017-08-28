@@ -10,7 +10,6 @@ namespace HutSoft.D3.DataMigration
     internal class VaultUtility
     {
         private Settings _settings;
-        private bool _isLoggedIn = false;
         private WebServiceManager _webServiceManager;
 
         internal VaultUtility(Settings settings)
@@ -24,23 +23,19 @@ namespace HutSoft.D3.DataMigration
             set { _settings = value; }
         }
 
-        internal bool IsLoggedIn { get { return _isLoggedIn; } }
-
         internal WebServiceManager WebServiceManager { get { return _webServiceManager; } }
         
-        internal WebServiceManager LoginToVault(string vaultServer, string vaultInstance, string vaultUserName, string vaultPassword)
+        internal void LoginToVault(string vaultServer, string vaultInstance, string vaultUserName, string vaultPassword)
         {
-            WebServiceManager webServiceManager;
             try
             {
-                webServiceManager = new WebServiceManager(new UserPasswordCredentials(vaultServer, vaultInstance, vaultUserName, vaultPassword, false));
-                webServiceManager.ReSignIn = true;
+                _webServiceManager = new WebServiceManager(new UserPasswordCredentials(vaultServer, vaultInstance, vaultUserName, vaultPassword, false));
+                _webServiceManager.ReSignIn = true;
             }
             catch (Exception ex)
             {
                 throw (ex);
             }
-            return webServiceManager;
         }
 
         internal void LoginToVault()
@@ -48,11 +43,7 @@ namespace HutSoft.D3.DataMigration
             //Step0
             try
             {
-                if (_webServiceManager == null)
-                {
-                    _webServiceManager = LoginToVault(_settings.VaultServer, _settings.VaultInstance, _settings.VaultUserName, _settings.VaultPassword);
-                    _isLoggedIn = true;
-                }
+                LoginToVault(_settings.VaultServer, _settings.VaultInstance, _settings.VaultUserName, _settings.VaultPassword);
             }
             catch (Exception ex)
             {
@@ -63,78 +54,96 @@ namespace HutSoft.D3.DataMigration
         internal bool FlightCheck()
         {
             bool passesLifeCycleDefName = false;
-            bool passesWIPStateName = false;
-            bool passesWIPStateID = false;
-            bool passesReleasedName = false;
-            bool passesReleasedID = false;
+            bool passesWipStateName = false;
+            bool passesWipStateID = false;
+            bool passesReleasedStateName = false;
+            bool passesReleasedStateID = false;
             
             //Settings variables must match Vault
             try
             {
-                SettingsValuesExistInVault(out passesLifeCycleDefName, out passesWIPStateName, out passesWIPStateID, out passesReleasedName, out passesReleasedID);
+                SettingsValuesExistInVault(
+                    _settings.LifeCycleDefName, out passesLifeCycleDefName, 
+                    _settings.WipStateName, out passesWipStateName, 
+                    _settings.WipStateID, out passesWipStateID, 
+                    _settings.ReleasedStateName, out passesReleasedStateName, 
+                    _settings.ReleasedStateID, out passesReleasedStateID);
             }
             catch (Exception ex)
             {
                 throw (ex);
             }
 
-            return (passesLifeCycleDefName && passesWIPStateName && passesWIPStateID && passesReleasedName && passesReleasedID);
+            return (passesLifeCycleDefName && passesWipStateName && passesWipStateID && passesReleasedStateName && passesReleasedStateID);
         }
 
-        private void SettingsValuesExistInVault(out bool passesLifeCycleDefName, out bool passesWIPStateName, out bool passesWIPStateID, out bool passesReleasedName, out bool passesReleasedID)
+        internal void SettingsValuesExistInVault(
+            string lifeCycleDefName, out bool passesLifeCycleDefName,
+            string wipStateName, out bool passesWipStateName,
+            long wipStateID, out bool passesWipStateID,
+            string releasedStateName, out bool passesReleasedStateName,
+            long releasedStateID, out bool passesReleasedStateID)
         {
             passesLifeCycleDefName = false;
-            passesWIPStateName = false;
-            passesWIPStateID = false;
-            passesReleasedName = false;
-            passesReleasedID = false;
+            passesWipStateName = false;
+            passesWipStateID = false;
+            passesReleasedStateName = false;
+            passesReleasedStateID = false;
 
             try
             {
                 //Does LifeCycleDefName in settings exist in Vault?
                 LfCycDef[] lfCycDefs = _webServiceManager.DocumentServiceExtensions.GetAllLifeCycleDefinitions();
                 LfCycDef lfCycDef = (from row in lfCycDefs
-                                     where row.DispName == _settings.LifeCycleDefName
+                                     where row.DispName == lifeCycleDefName
                                      select row).FirstOrDefault();
                 if (lfCycDef != null)
                 {
-                    //Lifecycle Definitions was found
+                    //LifeCycleDefName found
                     passesLifeCycleDefName = true;
 
                     LfCycState[] lfCycStates = lfCycDef.StateArray;
 
                     //Does WipStateName in settings exist in Vault?
                     LfCycState lfCycState_WipStateName = (from row in lfCycStates
-                                                          where row.DispName == _settings.WipStateName
+                                                          where row.DispName == wipStateName
                                                           select row).FirstOrDefault();
                     if (lfCycState_WipStateName != null)
                     {
-                        passesWIPStateName = true;
-                        
+                        //WipStateName found
+                        passesWipStateName = true;
+
                         //Does WipStateID in settings exist in Vault?
                         LfCycState lfCycState_WipStateID = (from row in lfCycStates
-                                                            where row.DispName == _settings.WipStateName 
-                                                            && row.Id == _settings.WipStateID
+                                                            where row.DispName == wipStateName
+                                                            && row.Id == wipStateID
                                                             select row).FirstOrDefault();
                         if (lfCycState_WipStateID != null)
-                            passesWIPStateID = true;
+                        {
+                            //WipStateID found
+                            passesWipStateID = true;
+                        }
                     }
 
                     //Does ReleasedName in settings exist in Vault?
                     LfCycState lfCycState_ReleasedStateName = (from row in lfCycStates
-                                                          where row.DispName == _settings.ReleasedStateName
-                                                          select row).FirstOrDefault();
+                                                               where row.DispName == releasedStateName
+                                                               select row).FirstOrDefault();
                     if (lfCycState_ReleasedStateName != null)
                     {
-                        passesReleasedName = true;
+                        //ReleasedStateName found
+                        passesReleasedStateName = true;
 
                         //Does ReleasedName in settings exist in Vault?
                         LfCycState lfCycState_ReleasedStateID = (from row in lfCycStates
-                                                            where row.DispName == _settings.ReleasedStateName
-                                                            && row.Id == _settings.ReleasedStateID
-                                                            select row).FirstOrDefault();
+                                                                 where row.DispName == releasedStateName
+                                                                 && row.Id == releasedStateID
+                                                                 select row).FirstOrDefault();
                         if (lfCycState_ReleasedStateID != null)
-                            passesReleasedID = true;
+                        {
+                            //ReleasedStateID found
+                            passesReleasedStateID = true;
+                        }
                     }
                 }
             }
@@ -142,15 +151,6 @@ namespace HutSoft.D3.DataMigration
             {
                 throw (ex);
             }
-        }
-
-        internal bool LifeCycleDefNameExists()
-        {
-            bool result = false;
-
-            
-
-            return result;
         }
 
         internal Autodesk.Connectivity.WebServices.File GetExistingFile(string localFilePath)
@@ -223,7 +223,7 @@ namespace HutSoft.D3.DataMigration
                     //Set the MasterID so we can reference it later
                     existingFile = foundFiles.First();
 
-                    //moved to LifeCycleDefNameExists() and verified before migration in FlightCheck()
+                    //moved to verification before migration in FlightCheck()
                     /// //First we need to get a list of the Lifecycle States on this file
                     /// //We are using the same lifecycle definition for all files so this should be fairly straight forward
                     /// LfCycDef[] lcDefs = _webServiceManager.DocumentServiceExtensions.GetAllLifeCycleDefinitions();
@@ -237,17 +237,18 @@ namespace HutSoft.D3.DataMigration
 
                     //Check the state of the existing file
 
-                    //Find the LfCycState that matches the To State Name and get it's ID
-                    IdPair[] wipFileLCStates = _webServiceManager.DocumentServiceExtensions.GetLifeCycleStateIdsByFileMasterIds(new long[] { existingFile.MasterId });
-                    foreach (var state in wipFileLCStates)
-                    {
-                        LfCycState lfState = _webServiceManager.LifeCycleService.GetLifeCycleStatesByIds(new long[] { state.ValId }).First();
-                        if (lfState.DispName == _settings.WipStateName) //TODO: What if there is no matching lfState.DispName for the WipStateName in Settings.xml?
-                        {
-                            _settings.WipStateID = lfState.Id; //TODO: Does this need to be saved back to physical Settings.xml file?
-                            break;
-                        }
-                    }
+                    //moved to verification before migration in FlightCheck()
+                    /// //Find the LfCycState that matches the To State Name and get it's ID
+                    /// IdPair[] wipFileLCStates = _webServiceManager.DocumentServiceExtensions.GetLifeCycleStateIdsByFileMasterIds(new long[] { existingFile.MasterId });
+                    /// foreach (var state in wipFileLCStates)
+                    /// {
+                    ///     LfCycState lfState = _webServiceManager.LifeCycleService.GetLifeCycleStatesByIds(new long[] { state.ValId }).First();
+                    ///     if (lfState.DispName == _settings.WipStateName) 
+                    ///     {
+                    ///         _settings.WipStateID = lfState.Id; 
+                    ///         break;
+                    ///     }
+                    /// }
 
                     //Update the Files Lifecycle State
                     _webServiceManager.DocumentServiceExtensions.UpdateFileLifeCycleStates(new long[] { existingFile.MasterId }, new long[] { _settings.WipStateID }, "Data Migration");
@@ -485,16 +486,17 @@ namespace HutSoft.D3.DataMigration
             Autodesk.Connectivity.WebServices.File file = null;
             try
             {
-                IdPair[] releasedRildLCStates = _webServiceManager.DocumentServiceExtensions.GetLifeCycleStateIdsByFileMasterIds(new long[] { masterID });
-                foreach (var state in releasedRildLCStates)
-                {
-                    LfCycState lfState = _webServiceManager.LifeCycleService.GetLifeCycleStatesByIds(new long[] { state.ValId }).First();
-                    if (lfState.DispName == _settings.ReleasedStateName)
-                    {
-                        _settings.ReleasedStateID = lfState.Id; //TODO: Does this need to be saved back to physical Settings.xml file?
-                        break;
-                    }
-                }
+                //moved to verification before migration in FlightCheck()
+                /// IdPair[] releasedRildLCStates = _webServiceManager.DocumentServiceExtensions.GetLifeCycleStateIdsByFileMasterIds(new long[] { masterID });
+                /// foreach (var state in releasedRildLCStates)
+                /// {
+                ///     LfCycState lfState = _webServiceManager.LifeCycleService.GetLifeCycleStatesByIds(new long[] { state.ValId }).First();
+                ///     if (lfState.DispName == _settings.ReleasedStateName)
+                ///     {
+                ///         _settings.ReleasedStateID = lfState.Id; //TODO: Does this need to be saved back to physical Settings.xml file?
+                ///         break;
+                ///     }
+                /// }
 
                 //Update the Files Lifecycl State
                 _webServiceManager.DocumentServiceExtensions.UpdateFileLifeCycleStates(

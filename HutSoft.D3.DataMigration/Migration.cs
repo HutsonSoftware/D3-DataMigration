@@ -98,6 +98,10 @@ namespace HutSoft.D3.DataMigration
                     AssignFileIdsToBackgroundWorkers();
                     RunBackgroundWorkers();
                 }
+                else
+                {
+                    _logUtility.Log("FlightCheck failed.  Click File|Config, then Verify Variables for details.");
+                }
             }
             catch (Exception ex)
             {

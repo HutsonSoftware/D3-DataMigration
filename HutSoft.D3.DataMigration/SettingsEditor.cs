@@ -37,6 +37,11 @@ namespace HutSoft.D3.DataMigration
             ReleasedStateName.Text = Settings.ReleasedStateName;
             ReleasedStateID.Text = Settings.ReleasedStateID.ToString();
             DesignsRootPath.Text = Settings.DesignsRootPath;
+
+            WipStateID.Validating += TextBoxIsNumeric_Validating;
+            WipStateID.Validated += TexBoxIsNumeric_Validated;
+            ReleasedStateID.Validating += TextBoxIsNumeric_Validating;
+            ReleasedStateID.Validated += TexBoxIsNumeric_Validated;
         }
 
         private void TestAgileSQLiteConnection_Click(object sender, EventArgs e)
@@ -87,9 +92,17 @@ namespace HutSoft.D3.DataMigration
             TestVaultConnection.Text = "Testing...";
             TestVaultConnection.Enabled = false;
             TestVaultConnection.Parent.Focus();
+            VerifyVaultConnection();
+            TestVaultConnection.Text = "Test Connection";
+            TestVaultConnection.Enabled = true;
+            TestVaultConnection.Focus();
+        }
+
+        private void VerifyVaultConnection()
+        {
             try
             {
-                WebServiceManager svcMgr = _vaultUtility.LoginToVault(VaultServer.Text, VaultInstance.Text, VaultUserName.Text, VaultPassword.Text);
+                _vaultUtility.LoginToVault(VaultServer.Text, VaultInstance.Text, VaultUserName.Text, VaultPassword.Text);
                 errorProvider1.SetError(TestVaultConnection, "");
                 VaultServer.BackColor = SystemColors.Window;
                 VaultInstance.BackColor = SystemColors.Window;
@@ -104,9 +117,6 @@ namespace HutSoft.D3.DataMigration
                 VaultUserName.BackColor = Color.LightPink;
                 VaultPassword.BackColor = Color.LightPink;
             }
-            TestVaultConnection.Text = "Test Connection";
-            TestVaultConnection.Enabled = true;
-            TestVaultConnection.Focus();
         }
 
         private void TexBoxIsNumeric_Validated(object sender, EventArgs e)
@@ -124,6 +134,56 @@ namespace HutSoft.D3.DataMigration
                 textBox.SelectAll();
                 e.Cancel = true;
             }
+        }
+
+        private void VerifyVariables_Click(object sender, EventArgs e)
+        {
+            VerifyVariables.Text = "Verifing...";
+            VerifyVariables.Enabled = false;
+            VerifyVariables.Parent.Focus();
+            try
+            {
+                bool passesLifeCycleDefName = false;
+                bool passesWipStateName = false;
+                bool passesWipStateID = false;
+                bool passesReleasedStateName = false;
+                bool passesReleasedStateID = false;
+
+                VerifyVaultConnection();
+
+                long.TryParse(WipStateID.Text, out long wipStateID);
+                long.TryParse(ReleasedStateID.Text, out long releasedStateID);
+
+                _vaultUtility.SettingsValuesExistInVault(
+                    LifeCycleDefName.Text, out passesLifeCycleDefName,
+                    WipStateName.Text, out passesWipStateName,
+                    wipStateID, out passesWipStateID,
+                    ReleasedStateName.Text, out passesReleasedStateName,
+                    releasedStateID, out passesReleasedStateID);
+
+                if (passesLifeCycleDefName && passesWipStateName && passesWipStateID && passesReleasedStateName && passesReleasedStateID)
+                    errorProvider1.SetError(VerifyVariables, "");
+                else
+                    errorProvider1.SetError(VerifyVariables, "The highlighed variables did not verify");
+
+                LifeCycleDefName.BackColor = (passesLifeCycleDefName ? SystemColors.Window : Color.LightPink);
+                WipStateName.BackColor = (passesWipStateName ? SystemColors.Window : Color.LightPink);
+                WipStateID.BackColor = (passesWipStateID ? SystemColors.Window : Color.LightPink);
+                ReleasedStateName.BackColor = (passesReleasedStateName ? SystemColors.Window : Color.LightPink);
+                ReleasedStateID.BackColor = (passesReleasedStateID ? SystemColors.Window : Color.LightPink);
+            }
+            catch (Exception ex)
+            {
+                errorProvider1.SetError(VerifyVariables, "Failed Variable Verification: " + ex.Message);
+                LifeCycleDefName.BackColor = Color.LightPink;
+                WipStateName.BackColor = Color.LightPink;
+                WipStateID.BackColor = Color.LightPink;
+                ReleasedStateName.BackColor = Color.LightPink;
+                ReleasedStateID.BackColor = Color.LightPink;
+            }
+            VerifyVariables.Text = "Verify Variables";
+            VerifyVariables.Enabled = true;
+            VerifyVariables.Focus();
         }
 
         private void Save_Click(object sender, EventArgs e)
@@ -185,7 +245,7 @@ namespace HutSoft.D3.DataMigration
                 Settings.ReleasedStateName = ReleasedStateName.Text;
                 IsDirty = true;
             }
-            long.TryParse(WipStateID.Text, out long releasedStateID);
+            long.TryParse(ReleasedStateID.Text, out long releasedStateID);
             if (Settings.ReleasedStateID != releasedStateID)
             {
                 Settings.ReleasedStateID = releasedStateID;
