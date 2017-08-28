@@ -62,41 +62,93 @@ namespace HutSoft.D3.DataMigration
 
         internal bool FlightCheck()
         {
-            bool result = false;
+            bool passesLifeCycleDefName = false;
+            bool passesWIPStateName = false;
+            bool passesWIPStateID = false;
+            bool passesReleasedName = false;
+            bool passesReleasedID = false;
+            
+            //Settings variables must match Vault
             try
             {
-                result = LifeCycleDefNameExists();
-                //TODO: verify that WipStateName & ReleasedStateName exist also ... how??
+                SettingsValuesExistInVault(out passesLifeCycleDefName, out passesWIPStateName, out passesWIPStateID, out passesReleasedName, out passesReleasedID);
             }
             catch (Exception ex)
             {
                 throw (ex);
             }
 
-            return result;
+            return (passesLifeCycleDefName && passesWIPStateName && passesWIPStateID && passesReleasedName && passesReleasedID);
         }
 
-        internal bool LifeCycleDefNameExists()
+        private void SettingsValuesExistInVault(out bool passesLifeCycleDefName, out bool passesWIPStateName, out bool passesWIPStateID, out bool passesReleasedName, out bool passesReleasedID)
         {
-            bool result = false;
+            passesLifeCycleDefName = false;
+            passesWIPStateName = false;
+            passesWIPStateID = false;
+            passesReleasedName = false;
+            passesReleasedID = false;
 
             try
             {
                 //Does LifeCycleDefName in settings exist in Vault?
-                LfCycDef[] lcDefs = _webServiceManager.DocumentServiceExtensions.GetAllLifeCycleDefinitions();
-                LfCycDef stdLcDef = (from l in lcDefs
-                                     where l.DispName == _settings.LifeCycleDefName
-                                     select l).FirstOrDefault();
-                if (stdLcDef != null)
+                LfCycDef[] lfCycDefs = _webServiceManager.DocumentServiceExtensions.GetAllLifeCycleDefinitions();
+                LfCycDef lfCycDef = (from row in lfCycDefs
+                                     where row.DispName == _settings.LifeCycleDefName
+                                     select row).FirstOrDefault();
+                if (lfCycDef != null)
                 {
                     //Lifecycle Definitions was found
-                    result = true;
+                    passesLifeCycleDefName = true;
+
+                    LfCycState[] lfCycStates = lfCycDef.StateArray;
+
+                    //Does WipStateName in settings exist in Vault?
+                    LfCycState lfCycState_WipStateName = (from row in lfCycStates
+                                                          where row.DispName == _settings.WipStateName
+                                                          select row).FirstOrDefault();
+                    if (lfCycState_WipStateName != null)
+                    {
+                        passesWIPStateName = true;
+                        
+                        //Does WipStateID in settings exist in Vault?
+                        LfCycState lfCycState_WipStateID = (from row in lfCycStates
+                                                            where row.DispName == _settings.WipStateName 
+                                                            && row.Id == _settings.WipStateID
+                                                            select row).FirstOrDefault();
+                        if (lfCycState_WipStateID != null)
+                            passesWIPStateID = true;
+                    }
+
+                    //Does ReleasedName in settings exist in Vault?
+                    LfCycState lfCycState_ReleasedStateName = (from row in lfCycStates
+                                                          where row.DispName == _settings.ReleasedStateName
+                                                          select row).FirstOrDefault();
+                    if (lfCycState_ReleasedStateName != null)
+                    {
+                        passesReleasedName = true;
+
+                        //Does ReleasedName in settings exist in Vault?
+                        LfCycState lfCycState_ReleasedStateID = (from row in lfCycStates
+                                                            where row.DispName == _settings.ReleasedStateName
+                                                            && row.Id == _settings.ReleasedStateID
+                                                            select row).FirstOrDefault();
+                        if (lfCycState_ReleasedStateID != null)
+                            passesReleasedID = true;
+                    }
                 }
             }
             catch (Exception ex)
             {
                 throw (ex);
             }
+        }
+
+        internal bool LifeCycleDefNameExists()
+        {
+            bool result = false;
+
+            
 
             return result;
         }
