@@ -7,8 +7,8 @@
   <VaultPassword>migration</VaultPassword>
   <LifeCycleDefName>Flexible Release Process</LifeCycleDefName>
   <WipStateName>Work in Progress</WipStateName>
-  <WipStateID>-1</WipStateID>
+  <WipStateID>5</WipStateID>
   <ReleasedStateName>Released</ReleasedStateName>
-  <ReleasedStateID>-1</ReleasedStateID>
+  <ReleasedStateID>7</ReleasedStateID>
   <DesignsRootPath>$\Vault\Designs\</DesignsRootPath>
 </Settings>

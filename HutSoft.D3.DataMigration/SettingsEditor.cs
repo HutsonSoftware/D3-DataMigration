@@ -1,5 +1,4 @@
-﻿using Autodesk.Connectivity.WebServicesTools;
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
@@ -12,7 +11,6 @@ namespace HutSoft.D3.DataMigration
         private VaultUtility _vaultUtility;
 
         public Settings Settings { get; set; }
-
         public bool IsDirty { get; set; }
 
         public SettingsEditor(Settings settings)
@@ -37,7 +35,6 @@ namespace HutSoft.D3.DataMigration
             ReleasedStateName.Text = Settings.ReleasedStateName;
             ReleasedStateID.Text = Settings.ReleasedStateID.ToString();
             DesignsRootPath.Text = Settings.DesignsRootPath;
-
             WipStateID.Validating += TextBoxIsNumeric_Validating;
             WipStateID.Validated += TexBoxIsNumeric_Validated;
             ReleasedStateID.Validating += TextBoxIsNumeric_Validating;
@@ -49,7 +46,6 @@ namespace HutSoft.D3.DataMigration
             TestAgileSQLiteConnection.Text = "Testing...";
             TestAgileSQLiteConnection.Enabled = false;
             TestAgileSQLiteConnection.Parent.Focus();
-            
             try
             {
                 _agileUtility.TestSQLiteConnection(AgileSQLiteConnectionString.Text);
@@ -143,29 +139,21 @@ namespace HutSoft.D3.DataMigration
             VerifyVariables.Parent.Focus();
             try
             {
-                bool passesLifeCycleDefName = false;
-                bool passesWipStateName = false;
-                bool passesWipStateID = false;
-                bool passesReleasedStateName = false;
-                bool passesReleasedStateID = false;
-
+                bool passesLifeCycleDefName, passesWipStateName, passesWipStateID, passesReleasedStateName, passesReleasedStateID;
+                passesLifeCycleDefName = passesWipStateName = passesWipStateID = passesReleasedStateName = passesReleasedStateID = false;
                 VerifyVaultConnection();
-
                 long.TryParse(WipStateID.Text, out long wipStateID);
                 long.TryParse(ReleasedStateID.Text, out long releasedStateID);
-
                 _vaultUtility.SettingsValuesExistInVault(
                     LifeCycleDefName.Text, out passesLifeCycleDefName,
                     WipStateName.Text, out passesWipStateName,
                     wipStateID, out passesWipStateID,
                     ReleasedStateName.Text, out passesReleasedStateName,
                     releasedStateID, out passesReleasedStateID);
-
                 if (passesLifeCycleDefName && passesWipStateName && passesWipStateID && passesReleasedStateName && passesReleasedStateID)
                     errorProvider1.SetError(VerifyVariables, "");
                 else
                     errorProvider1.SetError(VerifyVariables, "The highlighed variables did not verify");
-
                 LifeCycleDefName.BackColor = (passesLifeCycleDefName ? SystemColors.Window : Color.LightPink);
                 WipStateName.BackColor = (passesWipStateName ? SystemColors.Window : Color.LightPink);
                 WipStateID.BackColor = (passesWipStateID ? SystemColors.Window : Color.LightPink);

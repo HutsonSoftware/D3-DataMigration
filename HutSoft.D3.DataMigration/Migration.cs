@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace HutSoft.D3.DataMigration
@@ -314,96 +315,118 @@ namespace HutSoft.D3.DataMigration
         private void MigrateFile(DataRow dr)
         {
             string localFilePath = dr["FILE_PATH"].ToString().Replace("//", "\\");
-
             string vaultFolder = Path.Combine(_settings.DesignsRootPath, dr["CLASS"].ToString(), dr["SUBCLASS"].ToString());
-
-            Dictionary<string, string> fileProps = new Dictionary<string, string>();
-            //TODO: get fileProps from Settings.xml
-
+            Dictionary<string, string> fileProps = new Dictionary<string, string>(); //TODO: get fileProps from Settings.xml
             string[] readACLGroups = dr["FACILITIES_EXTERNAL"].ToString().Split(';');
             string[] writeACLGroups = dr["FACILITIES_INTERNAL"].ToString().Split(';');
-            
-            //TODO: Not Ready For This Yet
-            //UpdateFile(localFilePath, vaultFolder, fileProps, readACLGroups, writeACLGroups);
+            UpdateFile(dr["FILE_ID"].ToString(), dr["REV_ID"].ToString(), localFilePath, vaultFolder, fileProps, readACLGroups, writeACLGroups);
         }
 
-        /// <summary>
-        ///  This is an example of how to load file into Vault
-        ///  It may require modifications and testing to ensure it's fully functional
-        /// </summary>
         /// <param name="localFilePath">Path to the file on the local file system (FileStore)</param>
-        /// <param name "vaultFolder">The Vault Folder to check into.  
-        ///     "$/Vault/Designs/Folder/SubFolder
-        ///     Build the vaultFolder from the Classification data (Class/SubClass)
-        ///     //TODO: Set this via an input or config
-        ///     string designsRootPath = "$/Vault/Designs/"; //All files will be added under this directory in Vault
-        ///     string classPath String.Format("{0}/{1}", data.CLASS, data.SUBCLASS);
-        /// </param>
+        /// <param name "vaultFolder">The Vault Folder to check into </param>
         /// <param name="fileProps">Dictionary<string,string> of File Properties to be added/updated.
         ///     Key = Vault Property Display Name
         ///     Value = Property Value
         /// </param>
         /// <param name="readACLGroups">Array of ACL Group Names for Read Only access</param>
         /// <param name="writeACLGroups">Array of ACL Group Names for Read/Write access</param>
-        private void UpdateFile(string localFilePath, string vaultFolder, Dictionary<string, string> fileProps, string[] readACLGroups, string[] writeACLGroups)
+        private void UpdateFile(string fileId, string revId, string localFilePath, string vaultFolder, Dictionary<string, string> fileProps, string[] readACLGroups, string[] writeACLGroups)
         {
             try
             {
-                //Step1
-                //If the file being migrated has a previous version,
-                //we need to look up that file so we can change its state to WIP, then check it out
-                //If not previous version, skip to Step4
-                //if we have captured the File MasterID from a previous version we can use that to find
-                //the latest version when checking in a newer version
-                long masterID = -1;
-                Autodesk.Connectivity.WebServices.File existingFile = _vaultUtility.GetExistingFile(localFilePath);
-                if (existingFile != null)
+                long masterId = -1, vaultFolderId = -1;
+                string missingVaultProperties, missingReadACLGroup, missingWriteACLGroup;
+                missingVaultProperties = missingReadACLGroup = missingWriteACLGroup = string.Empty;
+                long revMasterId = masterId, revFileId = -1;
+
+                if (!PhysicalFileExists(localFilePath))
                 {
-                    masterID = existingFile.MasterId;
-
-                    //Step2
-                    //Find the Folder we are checking into, if it doesn't exist then we'll create it
-                    _vaultUtility.VerifyVaultFolderExists(vaultFolder);
-
-                    //Step3
-                    //Upload or checkin the file
-                    long fldrID = -1;  //TODO: Set this via an input or config
-                    _vaultUtility.CheckInFile(localFilePath, existingFile, fldrID);
+                    _logUtility.Log("File does not exist: " + localFilePath);
+                    return;
                 }
-
-                //Step4
-                //Update the Vault File Properties
-                _vaultUtility.UpdateVaultFileProperties(fileProps, masterID);
-
-                //Step5
-                //Set the file security Groups (Access Control List)
-                _vaultUtility.SetFileSecurityGroups(writeACLGroups, readACLGroups, masterID);
-
-                //Step6
-                //Set the state of the file to Released
-                //Find the LfCycState that matches the To State Name and get its ID
-                Autodesk.Connectivity.WebServices.File updatedFileVersion = _vaultUtility.UpdateLifeCycleStateInfo(masterID);
-
-                //Step7
-                //Write the new Vault File data back to the database
-                _agileUtility.WriteBackVaultFileInfo(updatedFileVersion.MasterId, updatedFileVersion.Id);
+                FileInfo fileInfo = new FileInfo(localFilePath);
+                List<Autodesk.Connectivity.WebServices.File> foundFiles = _vaultUtility.GetVaultFilesByFileName(fileInfo.Name);
+                if (foundFiles.Count > 1)
+                {
+                    string vaultFileIds = string.Empty;
+                    int vaultFileCounter = 0;
+                    foreach (var foundFile in foundFiles)
+                    {
+                        vaultFileIds = vaultFileCounter == 0 ? foundFile.Id.ToString() : string.Format("{0}, {1}", vaultFileIds, foundFile.Id);
+                        vaultFileCounter++;
+                    }
+                    vaultFileIds = "Duplicate Vault File Ids found: " + vaultFileIds;
+                    _agileUtility.WriteBackFusionStatus(fileId, revId, vaultFileIds);
+                    _logUtility.Log("Duplicate Vault Files found for FileID=" + fileId);
+                    return;
+                }
+                else if (foundFiles.Count == 1)
+                {
+                    masterId = foundFiles.First().MasterId;
+                    _vaultUtility.UpdateVaultFileToWipState(masterId);
+                    _vaultUtility.CheckOutFile(masterId);
+                    if (_vaultUtility.CheckinUploadedFile(localFilePath, masterId))
+                    {
+                        _logUtility.Log("Failed CheckinUploadedFile for FileID=" + fileId);
+                        return;
+                    }
+                }
+                else
+                {
+                    vaultFolderId = _vaultUtility.GetVaultFolderId(vaultFolder);
+                    if (_vaultUtility.AddUploadedFile(localFilePath, masterId, vaultFolderId))
+                    {
+                        _logUtility.Log("Failed AddUploadedFile for FileID=" + fileId);
+                        return;
+                    }
+                }
+                _vaultUtility.UpdateVaultFileProperties(fileProps, masterId, out missingVaultProperties);
+                if (missingVaultProperties != string.Empty)
+                {
+                    missingVaultProperties = "Missing Vault Properties: " + missingVaultProperties;
+                    _agileUtility.WriteBackFusionStatus(fileId, revId, missingVaultProperties);
+                    _logUtility.Log("Missing Vault Properties for FileID=" + fileId);
+                }
+                _vaultUtility.SetFileSecurityReadGroups(readACLGroups, masterId, out missingReadACLGroup);
+                if (missingReadACLGroup != string.Empty)
+                {
+                    missingReadACLGroup = "Missing Read ACL Group: " + missingReadACLGroup;
+                    _agileUtility.WriteBackFusionStatus(fileId, revId, missingReadACLGroup);
+                    _logUtility.Log("Missing Read ACL Group for FileID=" + fileId);
+                    return;
+                }
+                _vaultUtility.SetFileSecurityReadWriteGroups(writeACLGroups, masterId, out missingWriteACLGroup);
+                if (missingWriteACLGroup != string.Empty)
+                {
+                    missingWriteACLGroup = "Missing Write ACL Group: " + missingWriteACLGroup;
+                    _agileUtility.WriteBackFusionStatus(fileId, revId, missingWriteACLGroup);
+                    _logUtility.Log("Missing Write ACL Group for FileID=" + fileId);
+                    return;
+                }
+                _vaultUtility.UpdateLifeCycleStateInfo(masterId, out revMasterId, out revFileId);
+                _agileUtility.WriteBackVaultFileInfo(fileId, revId, revMasterId, revFileId);
             }
             catch (Exception ex)
             {
                 _logUtility.Log(ex.Message);
             }
         }
-        
-        private void configToolStripMenuItem_Click(object sender, EventArgs e)
+
+        private bool PhysicalFileExists(string localFilePath)
         {
-            ViewConfig();
+            bool fileExists = false;
+            FileInfo fi = new FileInfo(localFilePath);
+            if (fi.Exists)
+            {
+                fileExists = true;
+            }
+            return fileExists;
         }
 
-        private void ViewConfig()
+        private void configToolStripMenuItem_Click(object sender, EventArgs e)
         {
             SettingsEditor editor = new SettingsEditor(_settings);
             editor.ShowDialog();
-
             if (editor.IsDirty)
             {
                 _settings = editor.Settings;
@@ -411,7 +434,6 @@ namespace HutSoft.D3.DataMigration
                 _agileUtility.Settings = _settings;
                 _vaultUtility.Settings = _settings;
             }
-
             editor.Dispose();
         }
 

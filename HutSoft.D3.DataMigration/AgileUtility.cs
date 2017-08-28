@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data;
+using System.Data.SqlClient;
 using System.Data.SQLite;
 
 namespace HutSoft.D3.DataMigration
@@ -132,21 +133,39 @@ namespace HutSoft.D3.DataMigration
             return GetDataTable(sql);
         }
 
-        internal void WriteBackVaultFileInfo(long masterId, long fileId)
+        internal void WriteBackFusionStatus(string fileID, string revID, string fusionStatus)
         {
-            //Step7
-            //Write the new Vault File data back to the database
-            try
-            {
-                long updatedFileMasterID = masterId;
-                long updatedFileVersionID = fileId;
-                string status = "Write migration status back to database";
-            }
-            catch (Exception ex)
-            {
-                throw (ex);
-            }
+            string sql = string.Format(
+                "UPDATE AED_ITEM_FILES " +
+                "SET FUSION_STATUS = {0} " +
+                "WHERE FILE_LOCATIONS = \"iFS\" " + "" +
+                "AND FILE_ID = {1} " +
+                "AND \"?REV_ID\" = {2}",
+                fusionStatus,
+                fileID,
+                revID);
+             ExecuteNonQuery(sql);
         }
+
+        internal void WriteBackVaultFileInfo(string fileID, string revID, long revMasterId, long revFileId)
+        {
+            //TODO: Missing VAULT_VERSION_FILE_ID in current agile database schema
+            string sql = string.Format(
+                "UPDATE AED_ITEM_FILES " +
+                "SET VAULT_FILE_ID = {0}, " +
+                "VAULT_VERSION_FILE_ID = {1}, " +
+                "FUSION_STATUS = {2} " +
+                "WHERE FILE_LOCATIONS = \"iFS\" " + "" +
+                "AND FILE_ID = {3} " +
+                "AND \"?REV_ID\" = {4}",
+                revMasterId,
+                revFileId,
+                _settings.ReleasedStateName,
+                fileID,
+                revID);
+            ExecuteNonQuery(sql);
+        }
+
         private DataTable GetDataTable(string sql)
         {
             DataTable dt = null;
@@ -190,10 +209,10 @@ namespace HutSoft.D3.DataMigration
             DataTable dt = null;
             try
             {
-                using (SQLiteConnection conn = new SQLiteConnection(connectionString))
+                using (SqlConnection conn = new SqlConnection(connectionString))
                 {
                     conn.Open();
-                    using (SQLiteDataAdapter da = new SQLiteDataAdapter(sql, conn))
+                    using (SqlDataAdapter da = new SqlDataAdapter(sql, conn))
                     {
                         dt = new DataTable();
                         da.Fill(dt);
@@ -201,11 +220,62 @@ namespace HutSoft.D3.DataMigration
                     conn.Close();
                 }
             }
-            catch (SQLiteException ex)
+            catch (SqlException ex)
             {
                 throw (ex);
             }
             return dt;
+        }
+
+        private void ExecuteNonQuery(string sql)
+        {
+            switch (_databaseType)
+            {
+                case DatabaseType.SQLite:
+                    ExecuteNonQueryFromSQLite(sql, _settings.AgileSQLiteConnectionString);
+                    break;
+                case DatabaseType.Oracle:
+                    ExecuteNonQueryFromOracle(sql, _settings.AgileOracleConnectionString);
+                    break;
+            }
+        }
+
+        private void ExecuteNonQueryFromSQLite(string sql, string connectionString)
+        {
+            try
+            {
+                using (SQLiteConnection conn = new SQLiteConnection(connectionString))
+                {
+                    conn.Open();
+                    SQLiteCommand cmd = conn.CreateCommand();
+                    cmd.CommandText = sql;
+                    cmd.ExecuteNonQuery();
+                    conn.Close();
+                }
+            }
+            catch (SQLiteException ex)
+            {
+                throw (ex);
+            }
+        }
+
+        private void ExecuteNonQueryFromOracle(string sql, string connectionString)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    SqlCommand cmd = conn.CreateCommand();
+                    cmd.CommandText = sql;
+                    cmd.ExecuteNonQuery();
+                    conn.Close();
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw (ex);
+            }
         }
     }
 }
